@@ -13,17 +13,33 @@ import {
 import { web3 } from "@project-serum/anchor";
 
 export type createTokenOptions = {
-  payer: web3.PublicKey;
   mintAuthority: web3.PublicKey;
-  freezAuthority: web3.PublicKey;
+  /** default (`mintAuthority`) */
+  payer?: web3.PublicKey;
+  /** default (`mintAuthority`) */
+  freezAuthority?: web3.PublicKey;
+  /** default (`0`) */
   decimal: number;
-  mint: {
-    allowMint: boolean;
-    tokenReceiver: web3.PublicKey;
-    tokenAmount: number;
-    allowOffCurveOwner: boolean;
+  /** default (`Keypair.genrate()`) */
+  mintKeypair?: web3.Keypair,
+  mintingInfo?: {
+    tokenReceiver?: web3.PublicKey;
+    /** default (`1`) */
+    tokenAmount?: number;
+    /** default (`false`) */
+    allowOffCurveOwner?: boolean;
   };
 };
+
+export type getOrCreateTokenAccountOptons = {
+  mint: web3.PublicKey,
+  owner: web3.PublicKey,
+  /** default (`owner`) */
+  payer?: web3.PublicKey,
+  /** default (`false`) */
+  allowOffCurveOwner?: boolean;
+}
+
 
 export class BaseSpl {
   __connection: web3.Connection;
@@ -39,55 +55,72 @@ export class BaseSpl {
 
   async __getCreateTokenInstructions(opts: createTokenOptions = null) {
     this.__reinit();
-    opts.payer = opts.payer ?? opts.mintAuthority;
-    opts.freezAuthority = opts.freezAuthority ?? opts.mintAuthority;
+    let {
+      mintAuthority,
+      mintingInfo,
+      decimal,
+      payer,
+      freezAuthority,
+      mintKeypair,
+    } = opts;
 
-    const token_keypair = web3.Keypair.generate();
-    const mint = token_keypair.publicKey;
+    payer = payer ?? mintAuthority;
+    freezAuthority = freezAuthority ?? mintAuthority;
+    decimal = decimal ?? 0;
+    mintKeypair = mintKeypair ?? web3.Keypair.generate();
+
+    const mint = mintKeypair.publicKey;
     const rent = await this.__connection.getMinimumBalanceForRentExemption(
       MINT_SIZE
     );
 
     const ix1 = web3.SystemProgram.createAccount({
-      fromPubkey: opts.payer ?? opts.mintAuthority,
+      fromPubkey: payer,
       lamports: rent,
-      newAccountPubkey: token_keypair.publicKey,
+      newAccountPubkey: mint,
       programId: TOKEN_PROGRAM_ID,
       space: MINT_SIZE,
     });
     this.__splIxs.push(ix1);
 
     const ix2 = createInitializeMintInstruction(
-      token_keypair.publicKey,
-      opts.decimal ?? 0,
-      opts.mintAuthority,
-      opts.freezAuthority
+      mintKeypair.publicKey,
+      decimal,
+      mintAuthority,
+      freezAuthority
     );
     this.__splIxs.push(ix2);
 
-    if (opts?.mint?.allowMint) {
-      const tokenReceiver = opts?.mint?.tokenReceiver ?? opts?.mintAuthority;
+    if (opts?.mintingInfo) {
+      let {
+        tokenReceiver,
+        allowOffCurveOwner,
+        tokenAmount
+      } = mintingInfo;
+      tokenReceiver = mintingInfo?.tokenReceiver ?? opts?.mintAuthority;
+      allowOffCurveOwner = allowOffCurveOwner ?? false;
+      tokenAmount = tokenAmount ?? 1
 
       const { ata, ix: createTokenAccountIx } =
         this.__getCreateTokenAccountInstruction(
           mint,
           tokenReceiver,
-          opts?.mint?.allowOffCurveOwner,
-          opts?.payer
+          allowOffCurveOwner,
+          payer,
         );
       this.__splIxs.push(createTokenAccountIx);
 
       const ix3 = createMintToInstruction(
         mint,
         ata,
-        opts?.mintAuthority,
-        opts?.mint?.tokenAmount ?? 1
+        mintAuthority,
+        tokenAmount
       );
-      this.__splIxs.push(ix2);
+      this.__splIxs.push(ix3);
     }
 
     return {
-      mintKp: token_keypair,
+      mintKp: mintKeypair,
       ixs: this.__splIxs,
     };
   }
@@ -113,11 +146,18 @@ export class BaseSpl {
   }
 
   async __getOrCreateTokenAccountInstruction(
-    mint: web3.PublicKey,
-    owner: web3.PublicKey,
-    allowOffCurveOwner: boolean = false,
-    payer: web3.PublicKey = null
+    input: getOrCreateTokenAccountOptons,
+    ixCallBack?: (ixs?: web3.TransactionInstruction[]) => void
   ) {
+    let {
+      owner,
+      mint,
+      payer,
+      allowOffCurveOwner,
+    } = input;
+    allowOffCurveOwner = allowOffCurveOwner ?? false
+    payer = payer ?? owner;
+
     const ata = getAssociatedTokenAddressSync(mint, owner, allowOffCurveOwner);
     let ix = null;
     const info = await this.__connection.getAccountInfo(ata);
@@ -129,6 +169,9 @@ export class BaseSpl {
         owner,
         mint
       );
+      if (ixCallBack) {
+        ixCallBack([ix])
+      }
     }
 
     return {

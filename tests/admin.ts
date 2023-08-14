@@ -5,10 +5,10 @@ import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { IDL, Sop } from "../target/types/sop";
 import {
-  FakeIdState,
   LineageInfo,
   MainState,
   MainStateInput,
+  MintProfileByAdminInput,
   Result,
   TxPassType,
 } from "./web3Types";
@@ -23,10 +23,10 @@ const {
   mplProgram,
   tokenProgram,
   sysvarInstructions,
-  Seeds
+  Seeds,
+  usdcMint
 } = web3Consts;
 const log = console.log;
-
 
 export class Connectivity {
   programId: web3.PublicKey;
@@ -39,14 +39,18 @@ export class Connectivity {
   mainState: web3.PublicKey;
   connection: web3.Connection;
 
-  constructor(wallet: anchor.Wallet) {
+  // constructor(wallet: anchor.Wallet) {
+  constructor(provider: AnchorProvider, programId: web3.PublicKey) {
     web3.SystemProgram.programId;
-    this.connection = new web3.Connection(Config.rpcURL);
-    this.provider = new anchor.AnchorProvider(this.connection, wallet, {
-      commitment: "confirmed",
-    });
+    // this.connection = new web3.Connection(Config.rpcURL);
+    // this.provider = new anchor.AnchorProvider(this.connection, wallet, {
+    //   commitment: "confirmed",
+    // });
+    this.provider = provider;
+    this.connection = provider.connection
 
-    this.program = new Program(IDL, this.programId, this.provider);
+    this.programId = programId
+    this.program = new Program(IDL, programId, this.provider);
     this.owner = this.provider.publicKey;
     this.mainState = web3.PublicKey.findProgramAddressSync(
       [Seeds.mainState],
@@ -60,7 +64,14 @@ export class Connectivity {
     this.multiSignInfo = [];
   }
 
-  async initMainState(input: MainStateInput): Promise<Result<TxPassType, any>> {
+  __getProfileStateAccount(mint: web3.PublicKey): web3.PublicKey {
+    return web3.PublicKey.findProgramAddressSync([
+      Seeds.profileState,
+      mint.toBuffer()
+    ], this.programId)[0]
+  }
+
+  async initMainState(input: MainStateInput): Promise<Result<TxPassType<any>, any>> {
     try {
       this.reinit();
       const signature = await this.program.methods
@@ -79,7 +90,7 @@ export class Connectivity {
 
   async updateMainState(
     input: MainStateInput
-  ): Promise<Result<TxPassType, any>> {
+  ): Promise<Result<TxPassType<any>, any>> {
     try {
       this.reinit();
       const signature = await this.program.methods
@@ -97,7 +108,7 @@ export class Connectivity {
 
   async updateMainStateOwner(
     newOwner: web3.PublicKey
-  ): Promise<Result<TxPassType, any>> {
+  ): Promise<Result<TxPassType<any>, any>> {
     try {
       this.reinit();
       const signature = await this.program.methods
@@ -113,72 +124,132 @@ export class Connectivity {
     }
   }
 
-  async initFakeIdState(
-    newOwner: web3.PublicKey
-  ): Promise<Result<TxPassType, any>> {
-    try {
-      this.reinit();
-      const signature = await this.program.methods
-        .initFakeIdState()
-        .accounts({
-          owner: this.owner,
-          mainState: this.mainState,
-        })
-        .rpc();
-      return { Ok: { signature } };
-    } catch (e) {
-      return { Err: e };
-    }
-  }
+  // async initFakeIdState(
+  //   newOwner: web3.PublicKey
+  // ): Promise<Result<TxPassType, any>> {
+  //   try {
+  //     this.reinit();
+  //     const signature = await this.program.methods
+  //       .initFakeIdState()
+  //       .accounts({
+  //         owner: this.owner,
+  //         mainState: this.mainState,
+  //       })
+  //       .rpc();
+  //     return { Ok: { signature } };
+  //   } catch (e) {
+  //     return { Err: e };
+  //   }
+  // }
+  //
 
-  async setupGenessisFakeId(
-    lineage: LineageInfo
-  ): Promise<Result<TxPassType, any>> {
-    try {
-      this.reinit();
-      const signature = await this.program.methods
-        .setupGenesisFakeId(lineage)
-        .accounts({
-          owner: this.owner,
-          mainState: this.mainState,
-        })
-        .rpc();
-      return { Ok: { signature } };
-    } catch (e) {
-      return { Err: e };
-    }
-  }
+  // async setupGenessisFakeId(
+  //   lineage: LineageInfo
+  // ): Promise<Result<TxPassType, any>> {
+  //   try {
+  //     this.reinit();
+  //     const signature = await this.program.methods
+  //       .setupGenesFakeId(lineage)
+  //       .accounts({
+  //         owner: this.owner,
+  //         mainState: this.mainState,
+  //       })
+  //       .rpc();
+  //     return { Ok: { signature } };
+  //   } catch (e) {
+  //     return { Err: e };
+  //   }
+  // }
 
-  async createCollection(): Promise<Result<TxPassType, any>> {
+  async createCollection(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
     try {
       this.reinit();
-      const owner = this.provider.publicKey;
-      if (!owner) throw "Wallet not found"
+      let {
+        name,
+        symbol,
+        uri,
+      } = input;
+      name = name ?? ""
+      symbol = symbol ?? ""
+      uri = uri ?? ""
+      const admin = this.provider.publicKey;
+      if (!admin) throw "Wallet not found"
       const mintKp = web3.Keypair.generate()
       const mint = mintKp.publicKey
-      const ownerAta = getAssociatedTokenAddressSync(mint, owner);
+      const adminAta = getAssociatedTokenAddressSync(mint, admin);
       const metadata = BaseMpl.getMetadataAccount(mint)
       const edition = BaseMpl.getEditionAccount(mint)
-      const name = ""
-      const symbol = ""
-      const uri = ""
+      const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
 
       const signature = await this.program.methods.createCollection(name, symbol, uri).accounts({
-        owner,
-        ownerAta,
+        admin,
+        adminAta,
         mainState: this.mainState,
         ataProgram,
         collection: mint,
+        collectionEdition: edition,
+        collectionMetadata: metadata,
+        collectionAuthorityRecord,
         mplProgram,
         tokenProgram,
         systemProgram,
-        collectionEdition: edition,
-        collectionMetadata: metadata,
         sysvarInstructions,
-      })
+      }).signers([mintKp]).rpc();
 
+      return {
+        Ok: { signature, info: { collection: mint.toBase58() } }
+      }
     } catch (e) {
+      log({ error: e })
       return { Err: e };
     }
+  }
+
+  async mintProfileByAdmin(input: MintProfileByAdminInput, collection: web3.PublicKey): Promise<Result<TxPassType<{ profile: string }>, any>> {
+    try {
+      this.reinit();
+      const admin = this.provider.publicKey;
+      if (!admin) throw "Wallet not found"
+      const mintKp = web3.Keypair.generate()
+      const profile = mintKp.publicKey
+      const profileState = this.__getProfileStateAccount(profile);
+      const profileMetadata = BaseMpl.getMetadataAccount(profile)
+      const profileEdition = BaseMpl.getEditionAccount(profile)
+      const collectionMetadata = BaseMpl.getMetadataAccount(collection)
+      const collectionEdition = BaseMpl.getEditionAccount(collection)
+      const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(collection, this.mainState)
+      const adminAta = getAssociatedTokenAddressSync(profile, admin);
+
+      const signature = await this.program.methods.mintProfileByAdmin(input).accounts({
+        admin,
+        adminAta,
+        profile,
+        mainState: this.mainState,
+        ataProgram,
+        collection,
+        mplProgram,
+        profileState,
+        tokenProgram,
+        systemProgram,
+        profileEdition,
+        profileMetadata,
+        collectionEdition,
+        collectionMetadata,
+        collectionAuthorityRecord,
+        sysvarInstructions,
+      }).signers([mintKp]).rpc();
+
+      return {
+        Ok: { signature, info: { profile: profile.toBase58() } }
+      }
+    } catch (e) {
+      log({ error: e })
+      return { Err: e };
+    }
+  }
+
+  async getMainStateInfo() {
+    const res = await this.program.account.mainState.fetch(this.mainState);
+    return res;
   }
 }

@@ -13,7 +13,7 @@ use solana_program::program::{invoke, invoke_signed};
 use crate::{
     _main::MainState,
     activation_token::ActivationTokenState,
-    constants::{SEED_ACTIVATION_TOKEN_STATE, SEED_MAIN_STATE, SEED_PEEP_STATE},
+    constants::{SEED_ACTIVATION_TOKEN_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE},
     error::MyError,
     other_states::LineageInfo,
     fake_id::{self, FakeIdState},
@@ -30,7 +30,7 @@ pub fn mint_activation_token(ctx: Context<AMintActivationToken>) -> Result<()> {
 
         //verification
         main_state.verify_activation_token(&activation_token_metadata)?;
-        main_state.verify_peep(&fake_id_metadata)?;
+        main_state.verify_profile(&fake_id_metadata)?;
         //state changes
         activation_token_state.parent_fake_id = ctx.accounts.fake_id.key();
         //TODO: update some main state if fiels are avaible (may be in future)
@@ -109,7 +109,7 @@ pub struct AMintActivationToken<'info> {
 
     #[account(
         mut,
-        seeds = [SEED_PEEP_STATE,fake_id.key().as_ref()],
+        seeds = [SEED_PROFILE_STATE,fake_id.key().as_ref()],
         bump,
     )]
     pub fake_id_state: Box<Account<'info, FakeIdState>>,

@@ -7,7 +7,7 @@ pub struct LineageInfo {
     pub creator: Pubkey,
     pub parent: Pubkey,
     pub grand_parent: Pubkey,
-    pub greate_grand_parent: Pubkey,
+    pub great_grand_parent: Pubkey,
     pub uncle_psy: Pubkey,
     pub generation: u64,
     pub total_child: u64,

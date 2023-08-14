@@ -1,12 +1,12 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("F7G5gQSsEZTAZeqbXQh9sfdQxpwzkJa9uRH2GpzdGDDF");
+declare_id!("7naVeywiE5AjY5SvwKyfRct9RQVqUTWNG36WhFu7JE6h");
 
 pub mod _main;
 pub mod activation_token;
 pub mod collection_factory;
 pub mod fake_id;
-pub mod peep;
+pub mod profile;
 
 pub mod constants;
 pub mod error;
@@ -17,10 +17,12 @@ use _main::*;
 use collection_factory::*;
 use fake_id::*;
 use other_states::LineageInfo;
-use peep::*;
+use profile::*;
 
 #[program]
 pub mod sop {
+    use crate::utils::get_vault_id;
+
     use super::*;
 
     //Adming Calls
@@ -52,14 +54,24 @@ pub mod sop {
         Ok(())
     }
 
+    pub fn mint_profile_by_admin(
+        ctx: Context<AMintProfileByAdmin>,
+        input: MintProfileByAdminInput,
+    ) -> Result<()> {
+        profile::mint_profile_by_admin(ctx, input)?;
+        Ok(())
+    }
+
     //User calls
-    pub fn mint_peep(
-        ctx: Context<AMintPeep>,
+    pub fn mint_profile(
+        ctx: Context<AMintProfile>,
         name: String,
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        peep::mint_peep(ctx, name, symbol, uri)?;
+        // profile::mint_profile(ctx, name, symbol, uri)?;
+        get_vault_id(ctx.accounts.parent_profile_state.mint);
+        msg!("{:?}", ctx.accounts.parent_vault_usdc_ata);
         Ok(())
     }
 }

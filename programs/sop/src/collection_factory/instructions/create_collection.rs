@@ -5,10 +5,14 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{
     instruction::{
+        approve_collection_authority,
         builders::{Burn, Create},
         verify_sized_collection_item, InstructionBuilder,
     },
-    state::{AssetData, Creator, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED},
+    state::{
+        AssetData, CollectionDetails, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA,
+        TOKEN_RECORD_SEED,
+    },
     ID as MPL_ID,
 };
 use solana_program::program::{invoke, invoke_signed};
@@ -16,7 +20,7 @@ use solana_program::program::{invoke, invoke_signed};
 use crate::{
     _main::MainState,
     collection_factory::CollectionState,
-    constants::{SEED_COLLECTION_STATE, SEED_MAIN_STATE, SEED_PEEP_STATE},
+    constants::{SEED_COLLECTION_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE},
     error::MyError,
     fake_id::{self, FakeIdState},
     other_states::LineageInfo,
@@ -30,11 +34,10 @@ pub fn create_collection(
     uri: String,
 ) -> Result<()> {
     {
-        let collection_state = &mut ctx.accounts.collection_state;
-        collection_state.mint = ctx.accounts.collection.key();
+        ctx.accounts.mint(name, symbol, uri)?;
     }
     {
-        ctx.accounts.mint(name, symbol, uri)?;
+        ctx.accounts.approve_collection_authority_to_main()?;
     }
 
     Ok(())
@@ -43,10 +46,11 @@ pub fn create_collection(
 #[derive(Accounts)]
 pub struct ACreateCollection<'info> {
     #[account(mut, address = main_state.owner @ MyError::OnlyOwnerCanCall)]
-    pub owner: Signer<'info>,
+    pub admin: Signer<'info>,
 
     ///CHECK:
-    pub owner_ata: AccountInfo<'info>,
+    #[account(mut)]
+    pub admin_ata: AccountInfo<'info>,
 
     #[account(
         mut,
@@ -58,16 +62,6 @@ pub struct ACreateCollection<'info> {
     ///CHECK:
     #[account(mut, signer)]
     pub collection: AccountInfo<'info>,
-
-    ///CHECK:
-    #[account(
-        init,
-        payer = owner,
-        seeds = [SEED_COLLECTION_STATE, collection.key().as_ref()],
-        bump,
-        space = 8 + CollectionState::MAX_SIZE
-    )]
-    pub collection_state: Box<Account<'info, CollectionState>>,
 
     ///CHECK:
     #[account(
@@ -97,6 +91,21 @@ pub struct ACreateCollection<'info> {
     pub collection_edition: AccountInfo<'info>,
 
     ///CHECK:
+    #[account(
+        mut,
+        seeds = [
+            METADATA.as_ref(),
+            MPL_ID.as_ref(),
+            collection.key().as_ref(),
+            COLLECTION_AUTHORITY.as_ref(),
+            main_state.key().as_ref(),
+        ],
+        bump,
+        seeds::program = MPL_ID
+    )]
+    pub collection_authority_record: AccountInfo<'info>,
+
+    ///CHECK:
     #[account()]
     pub sysvar_instructions: AccountInfo<'info>,
 
@@ -111,8 +120,8 @@ pub struct ACreateCollection<'info> {
 impl<'info> ACreateCollection<'info> {
     pub fn mint(&mut self, name: String, symbol: String, uri: String) -> Result<()> {
         let mint = self.collection.to_account_info();
-        let mint_owner = self.owner.to_account_info();
-        let ata = self.owner_ata.to_account_info();
+        let payer = self.admin.to_account_info();
+        let ata = self.admin_ata.to_account_info();
         let system_program = self.system_program.to_account_info();
         let token_program = self.token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
@@ -127,20 +136,17 @@ impl<'info> ACreateCollection<'info> {
             name,
             symbol,
             uri,
-            //TODO: may be require to add parent collection info
-            // collection: Some(mpl_token_metadata::state::Collection {
-            //     verified: false,
-            //     key: self.parent_collection.key(),
-            // }),
             collection: None,
             uses: None,
             creators: Some(vec![Creator {
-                address: mint_owner.key(),
+                address: payer.key(),
+                //TODO: may be require to invoke another instruction to flip the bool
+                // verified: true,
                 verified: true,
                 share: 100,
             }]),
-            collection_details: None,
-            is_mutable: true, //NOTE: may be for testing
+            collection_details: Some(CollectionDetails::V1 { size: 0 }),
+            is_mutable: true,
             rule_set: None,
             token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
             primary_sale_happened: false,
@@ -149,15 +155,15 @@ impl<'info> ACreateCollection<'info> {
 
         let ix = Create {
             mint: mint.key(),
-            payer: mint_owner.key(),
-            authority: main_state.key(),
+            payer: payer.key(),
+            authority: payer.key(),
             initialize_mint: true,
             system_program: system_program.key(),
             metadata: metadata.key(),
-            update_authority: main_state.key(),
+            update_authority: payer.key(),
             spl_token_program: token_program.key(),
             sysvar_instructions: sysvar_instructions.key(),
-            update_authority_as_signer: false,
+            update_authority_as_signer: true,
             master_edition: Some(edition.key()),
             args: mpl_token_metadata::instruction::CreateArgs::V1 {
                 asset_data,
@@ -167,11 +173,11 @@ impl<'info> ACreateCollection<'info> {
         }
         .instruction();
 
-        invoke(
+        invoke_signed(
             &ix,
             &[
                 mint,
-                mint_owner,
+                payer,
                 ata,
                 metadata,
                 edition,
@@ -180,9 +186,50 @@ impl<'info> ACreateCollection<'info> {
                 token_program,
                 system_program,
                 sysvar_instructions,
+                main_state.to_account_info(),
             ],
+            &[&[SEED_MAIN_STATE, &[main_state._bump]]],
         )?;
 
+        Ok(())
+    }
+
+    //Set up collection authority to main_state
+    pub fn approve_collection_authority_to_main(&mut self) -> Result<()> {
+        let mint = self.collection.to_account_info();
+        let payer = self.admin.to_account_info();
+        let system_program = self.system_program.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let metadata = self.collection_metadata.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
+        let main_state = &mut self.main_state;
+        let collection_authority_record = self.collection_authority_record.to_account_info();
+
+        let ix = approve_collection_authority(
+            mpl_program.key(),
+            collection_authority_record.key(),
+            main_state.key(),
+            payer.key(),
+            payer.key(),
+            metadata.key(),
+            mint.key(),
+        );
+
+        invoke_signed(
+            &ix,
+            &[
+                mint,
+                payer,
+                main_state.to_account_info(),
+                collection_authority_record,
+                metadata,
+                mpl_program,
+                system_program,
+                sysvar_instructions,
+            ],
+            &[&[SEED_MAIN_STATE, &[main_state._bump]]],
+        )?;
         Ok(())
     }
 

@@ -15,7 +15,7 @@ use solana_program::program::{invoke, invoke_signed};
 
 use crate::{
     _main::MainState,
-    constants::{SEED_PEEP_STATE, SEED_MAIN_STATE},
+    constants::{SEED_PROFILE_STATE, SEED_MAIN_STATE},
     error::MyError,
     fake_id::{self, FakeIdState},
     other_states::LineageInfo,
@@ -88,7 +88,7 @@ pub struct AMintFakeId<'info> {
     #[account(
         init,
         payer =  user,
-        seeds = [SEED_PEEP_STATE, fake_id.key().as_ref()],
+        seeds = [SEED_PROFILE_STATE, fake_id.key().as_ref()],
         bump,
         space= 8 + FakeIdState::MAX_SIZE
     )]
@@ -123,7 +123,7 @@ pub struct AMintFakeId<'info> {
 
     #[account(
         mut,
-        seeds = [SEED_PEEP_STATE, parent_fake_id_state.mint.as_ref()],
+        seeds = [SEED_PROFILE_STATE, parent_fake_id_state.mint.as_ref()],
         bump,
     )]
     pub parent_fake_id_state: Box<Account<'info, FakeIdState>>,

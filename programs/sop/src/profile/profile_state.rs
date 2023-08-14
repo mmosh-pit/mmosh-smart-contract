@@ -1,12 +1,12 @@
+use crate::other_states::LineageInfo;
 use anchor_lang::prelude::*;
 
 #[account]
-pub struct CollectionState {
-    pub genesis_profile: Pubkey,
-    pub is_genesis_profile_init: bool,
+pub struct ProfileState {
+    pub lineage: LineageInfo,
     pub mint: Pubkey,
 }
 
-impl CollectionState {
+impl ProfileState {
     pub const MAX_SIZE: usize = std::mem::size_of::<Self>();
 }

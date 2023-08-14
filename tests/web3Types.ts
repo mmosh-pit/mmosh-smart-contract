@@ -1,24 +1,31 @@
+import { web3 } from '@project-serum/anchor'
 import { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { Sop } from "../target/types/sop";
 
 const mainStateTypeName = "mainState";
-export type MainState = IdlAccounts<Sop>[typeof mainStateTypeName];
-
-const fakeIdStateTypeName = "fakeIdState";
-export type FakeIdState = IdlAccounts<Sop>[typeof fakeIdStateTypeName];
-
-const peepStateTypeName = "fakeIdState";
-export type PeepState = IdlAccounts<Sop>[typeof peepStateTypeName];
-
-const mainStateInputTypeName = "MainStateInput";
-export type MainStateInput = IdlTypes<Sop>[typeof mainStateInputTypeName];
-
+const profileStateTypeName = "profileState";
 const lineageTypeName = "LineageInfo";
+
+export type MainState = IdlAccounts<Sop>[typeof mainStateTypeName];
+export type ProfileState = IdlAccounts<Sop>[typeof profileStateTypeName];
 export type LineageInfo = IdlTypes<Sop>[typeof lineageTypeName];
 
+const mainStateInputTypeName = "MainStateInput";
+const mintProfileByAdminInput = "MintProfileByAdminInput"
+export type MainStateInput = IdlTypes<Sop>[typeof mainStateInputTypeName];
+export type MintProfileByAdminInput = IdlTypes<Sop>[typeof mintProfileByAdminInput];
+
+
+//EXTRA (Out of IDL)
 export type Result<T, E> = {
   Ok?: T;
   Err?: E;
 };
-export type TxPassType = { signature: string };
+export type TxPassType<Info> = { signature: string, info?: Info };
 
+export type _MintProfileInput = {
+  name?: string,
+  symbol?: string,
+  uri?: string,
+  parentProfile: string | web3.PublicKey
+}
