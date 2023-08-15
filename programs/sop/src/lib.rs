@@ -21,8 +21,6 @@ use profile::*;
 
 #[program]
 pub mod sop {
-    use crate::utils::get_vault_id;
-
     use super::*;
 
     //Adming Calls
@@ -69,9 +67,7 @@ pub mod sop {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        // profile::mint_profile(ctx, name, symbol, uri)?;
-        get_vault_id(ctx.accounts.parent_profile_state.mint);
-        msg!("{:?}", ctx.accounts.parent_vault_usdc_ata);
+        profile::mint_profile(ctx, name, symbol, uri)?;
         Ok(())
     }
 }

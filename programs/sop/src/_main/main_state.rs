@@ -59,5 +59,6 @@ impl MainStateInput {
         state.usdc_mint = self.usdc_mint;
         state.royalty_for_minting = self.royalty_for_minting;
         state.royalty_for_trading = self.royalty_for_trading;
+        state.profile_minting_usdc_price = self.profile_minting_usdc_price;
     }
 }

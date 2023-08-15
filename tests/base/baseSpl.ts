@@ -19,7 +19,7 @@ export type createTokenOptions = {
   /** default (`mintAuthority`) */
   freezAuthority?: web3.PublicKey;
   /** default (`0`) */
-  decimal: number;
+  decimal?: number;
   /** default (`Keypair.genrate()`) */
   mintKeypair?: web3.Keypair,
   mintingInfo?: {

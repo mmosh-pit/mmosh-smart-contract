@@ -16,10 +16,11 @@ import Config from "./web3Config.json";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { BaseMpl } from "./base/baseMpl";
 import { web3Consts } from './web3Consts'
+import { BaseSpl } from "./base/baseSpl";
 
 const {
   systemProgram,
-  ataProgram,
+  associatedTokenProgram,
   mplProgram,
   tokenProgram,
   sysvarInstructions,
@@ -38,6 +39,7 @@ export class Connectivity {
   owner: web3.PublicKey;
   mainState: web3.PublicKey;
   connection: web3.Connection;
+  baseSpl: BaseSpl;
 
   // constructor(wallet: anchor.Wallet) {
   constructor(provider: AnchorProvider, programId: web3.PublicKey) {
@@ -56,6 +58,7 @@ export class Connectivity {
       [Seeds.mainState],
       this.programId
     )[0];
+    this.baseSpl = new BaseSpl(this.connection)
   }
 
   reinit() {
@@ -181,11 +184,25 @@ export class Connectivity {
       const edition = BaseMpl.getEditionAccount(mint)
       const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
 
-      const signature = await this.program.methods.createCollection(name, symbol, uri).accounts({
+      const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
+        mintAuthority: admin,
+        mintKeypair: mintKp,
+        mintingInfo: {
+          tokenAmount: 1,
+          tokenReceiver: admin,
+        }
+      })
+      const mintTx = new web3.Transaction().add(...mintIxs)
+      const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
+
+      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
+      this.txis.push(cuBudgetIncIx)
+
+      const ix = await this.program.methods.createCollection(name, symbol, uri).accounts({
         admin,
         adminAta,
         mainState: this.mainState,
-        ataProgram,
+        associatedTokenProgram,
         collection: mint,
         collectionEdition: edition,
         collectionMetadata: metadata,
@@ -194,7 +211,12 @@ export class Connectivity {
         tokenProgram,
         systemProgram,
         sysvarInstructions,
-      }).signers([mintKp]).rpc();
+      }).instruction()
+      this.txis.push(ix)
+
+      const tx = new web3.Transaction().add(...this.txis)
+      this.txis = []
+      const signature = await this.provider.sendAndConfirm(tx)
 
       return {
         Ok: { signature, info: { collection: mint.toBase58() } }
@@ -220,15 +242,29 @@ export class Connectivity {
       const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(collection, this.mainState)
       const adminAta = getAssociatedTokenAddressSync(profile, admin);
 
-      const signature = await this.program.methods.mintProfileByAdmin(input).accounts({
+      const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
+        mintAuthority: admin,
+        mintKeypair: mintKp,
+        mintingInfo: {
+          tokenAmount: 1,
+          tokenReceiver: admin,
+        }
+      })
+      const mintTx = new web3.Transaction().add(...mintIxs)
+      const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
+
+      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
+      this.txis.push(cuBudgetIncIx)
+
+      const ix = await this.program.methods.mintProfileByAdmin(input).accounts({
         admin,
         adminAta,
         profile,
         mainState: this.mainState,
-        ataProgram,
         collection,
         mplProgram,
         profileState,
+        associatedTokenProgram,
         tokenProgram,
         systemProgram,
         profileEdition,
@@ -237,7 +273,12 @@ export class Connectivity {
         collectionMetadata,
         collectionAuthorityRecord,
         sysvarInstructions,
-      }).signers([mintKp]).rpc();
+      }).instruction();
+      this.txis.push(ix)
+
+      const tx = new web3.Transaction().add(...this.txis)
+      this.txis = []
+      const signature = await this.provider.sendAndConfirm(tx)
 
       return {
         Ok: { signature, info: { profile: profile.toBase58() } }

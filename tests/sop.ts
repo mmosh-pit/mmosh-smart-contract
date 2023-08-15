@@ -42,15 +42,15 @@ describe("sop", () => {
         creator: 60,
         parent: 20,
         grandParent: 10,
-        curator: 7,
-        psy: 3,
+        ggrandParent: 7,
+        unclePsy: 3,
       },
       royaltyForTrading: {
         seller: 80,
         creator: 5,
         parent: 3,
         curator: 3,
-        psy: 2,
+        unclePsy: 2,
       }
     })
     // log({ res })
@@ -97,10 +97,11 @@ describe("sop", () => {
     if (res?.Err) throw "tx failed"
     parentProfile = res.Ok.info.profile
     const profile = new web3.PublicKey(res.Ok.info.profile)
-    const profileStateAccount = adConn.__getProfileStateAccount(profile)
+
     //getting profile State
-    const profileInfo = await adConn.program.account.profileState.fetch(profileStateAccount)
-    log({ profileInfo })
+    // const profileStateAccount = adConn.__getProfileStateAccount(profile)
+    // const profileInfo = await adConn.program.account.profileState.fetch(profileStateAccount)
+    // log({ profileInfo })
   })
 
   let _profile: string
@@ -116,7 +117,6 @@ describe("sop", () => {
     if (res?.Err) throw "Tx failed"
     _profile = res.Ok?.info.profile;
   })
-  return
 
   it("lineage testing", async () => {
     const ggrandParent = new web3.PublicKey(parentProfile)
@@ -137,7 +137,6 @@ describe("sop", () => {
     });
     if (res2?.Err) throw "Tx failed"
     leaf = new web3.PublicKey(res2?.Ok.info.profile)
-
 
     const s1 = userConn.__getProfileStateAccount(ggrandParent);
     const greateGrandParentState = await userConn.program.account.profileState.fetch(s1)

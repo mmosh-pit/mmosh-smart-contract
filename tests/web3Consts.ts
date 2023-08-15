@@ -8,7 +8,7 @@ export const web3Consts = {
   sysvarInstructions: web3.SYSVAR_INSTRUCTIONS_PUBKEY,
   tokenProgram: TOKEN_PROGRAM_ID,
   mplProgram: new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
-  ataProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
+  associatedTokenProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
   usdcMint: new web3.PublicKey("G19W2ivoT6CQgpABaXr6PYbpx9QhdVBPJZSkC5PVNrDY"),
   Seeds: {
     mainState: utf8.encode("main_state1"),

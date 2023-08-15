@@ -40,6 +40,10 @@ pub fn create_collection(
         ctx.accounts.approve_collection_authority_to_main()?;
     }
 
+    {
+        //TODO: creator verification
+    }
+
     Ok(())
 }
 
@@ -48,10 +52,6 @@ pub struct ACreateCollection<'info> {
     #[account(mut, address = main_state.owner @ MyError::OnlyOwnerCanCall)]
     pub admin: Signer<'info>,
 
-    ///CHECK:
-    #[account(mut)]
-    pub admin_ata: AccountInfo<'info>,
-
     #[account(
         mut,
         seeds = [SEED_MAIN_STATE],
@@ -59,9 +59,20 @@ pub struct ACreateCollection<'info> {
     )]
     pub main_state: Box<Account<'info, MainState>>,
 
-    ///CHECK:
-    #[account(mut, signer)]
-    pub collection: AccountInfo<'info>,
+    #[account(
+        mut,
+        mint::decimals = 0,
+        mint::authority = admin,
+        mint::freeze_authority = admin
+    )]
+    pub collection: Box<Account<'info, Mint>>,
+
+    #[account(
+        mut,
+        token::mint = collection,
+        token::authority = admin,
+    )]
+    pub admin_ata: Box<Account<'info, TokenAccount>>,
 
     ///CHECK:
     #[account(
@@ -113,7 +124,7 @@ pub struct ACreateCollection<'info> {
     #[account(address = MPL_ID)]
     pub mpl_program: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
-    pub ata_program: Program<'info, AssociatedToken>,
+    pub associated_token_program : Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
@@ -127,7 +138,7 @@ impl<'info> ACreateCollection<'info> {
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.collection_metadata.to_account_info();
         let edition = self.collection_edition.to_account_info();
-        let ata_program = self.ata_program.to_account_info();
+        let ata_program = self.associated_token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
@@ -138,14 +149,24 @@ impl<'info> ACreateCollection<'info> {
             uri,
             collection: None,
             uses: None,
-            creators: Some(vec![Creator {
-                address: payer.key(),
-                //TODO: may be require to invoke another instruction to flip the bool
-                // verified: true,
-                verified: true,
-                share: 100,
-            }]),
+            creators: Some(vec![
+                Creator {
+                    address: payer.key(),
+                    //TODO: may be require to invoke another instruction to flip the bool
+                    // verified: true,
+                    verified: false,
+                    share: 100,
+                },
+                // Creator {
+                //     address: main_state.key(),
+                //     //TODO: may be require to invoke another instruction to flip the bool
+                //     // verified: true,
+                //     verified: false,
+                //     share: 10,
+                // },
+            ]),
             collection_details: Some(CollectionDetails::V1 { size: 0 }),
+            // collection_details: None,
             is_mutable: true,
             rule_set: None,
             token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
@@ -157,10 +178,10 @@ impl<'info> ACreateCollection<'info> {
             mint: mint.key(),
             payer: payer.key(),
             authority: payer.key(),
-            initialize_mint: true,
+            initialize_mint: false,
             system_program: system_program.key(),
             metadata: metadata.key(),
-            update_authority: payer.key(),
+            update_authority: main_state.key(),
             spl_token_program: token_program.key(),
             sysvar_instructions: sysvar_instructions.key(),
             update_authority_as_signer: true,
@@ -210,7 +231,7 @@ impl<'info> ACreateCollection<'info> {
             mpl_program.key(),
             collection_authority_record.key(),
             main_state.key(),
-            payer.key(),
+            main_state.key(),
             payer.key(),
             metadata.key(),
             mint.key(),

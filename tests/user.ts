@@ -21,7 +21,7 @@ import { BaseSpl } from "./base/baseSpl";
 
 const {
   systemProgram,
-  ataProgram,
+  associatedTokenProgram: associatedTokenProgram,
   mplProgram,
   tokenProgram,
   sysvarInstructions,
@@ -127,25 +127,40 @@ export class Connectivity {
         mint: usdcMint, payer: user
       }, this.ixCallBack,)
       const { ata: parentVaultUsdcAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({
-        owner: this.__getProfileStateAccount(parentProfileStateInfo.mint),
+        owner: this.__getValutAccount(parentProfileStateInfo.mint),
         mint: usdcMint, payer: user, allowOffCurveOwner: true
       }, this.ixCallBack)
       const { ata: grandParentVaultUsdcAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({
-        owner: this.__getProfileStateAccount(parentProfileLineage.parent),
+        owner: this.__getValutAccount(parentProfileLineage.parent),
         mint: usdcMint, payer: user, allowOffCurveOwner: true
       }, this.ixCallBack)
       const { ata: ggrandParentVaultUsdcAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({
-        owner: this.__getProfileStateAccount(parentProfileLineage.grandParent),
+        owner: this.__getValutAccount(parentProfileLineage.grandParent),
         mint: usdcMint, payer: user, allowOffCurveOwner: true
       }, this.ixCallBack)
       const { ata: uncleVaultUsdcAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({
-        owner: this.__getProfileStateAccount(parentProfileLineage.unclePsy),
+        owner: this.__getValutAccount(parentProfileLineage.unclePsy),
         mint: usdcMint, payer: user, allowOffCurveOwner: true
       }, this.ixCallBack)
+
       //NOTE: need to improve it
       const tx_tmp = new web3.Transaction().add(...this.txis)
       this.txis = []
       const signature_tmp = await this.provider.sendAndConfirm(tx_tmp)
+
+      // minting token
+      const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
+        mintAuthority: user,
+        mintKeypair: mintKp,
+        mintingInfo: {
+          tokenAmount: 1,
+        }
+      })
+      const mintTx = new web3.Transaction().add(...mintIxs)
+      const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
+
+      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
+      this.txis.push(cuBudgetIncIx)
 
       const ix = await this.program.methods.mintProfile(name, symbol, uri).accounts({
         user,
@@ -161,7 +176,7 @@ export class Connectivity {
         collection,
         collectionMetadata,
         collectionEdition,
-        ataProgram,
+        associatedTokenProgram,
         mplProgram,
         tokenProgram,
         systemProgram,
@@ -178,17 +193,14 @@ export class Connectivity {
 
       const tx = new web3.Transaction().add(...this.txis)
       this.txis = []
-      const signature = await this.provider.sendAndConfirm(tx, [mintKp])
-      log({ parentVaultUsdcAta: parentVaultUsdcAta.toBase58() })
-      log({ vault: this.__getValutAccount(parentProfile) })
-      log({ parentProfile: parentProfile.toBase58() })
+      const signature = await this.provider.sendAndConfirm(tx)
       return {
         Ok: { signature, info: { profile: profile.toBase58() } }
       }
-    } catch (e) {
-      // log({ error: JSON.parse(JSON.stringify(e)) })
-      log({ e })
-      return { Err: e };
+    } catch (error) {
+      // // log({ error: JSON.parse(JSON.stringify(e)) })
+      log({ error: error })
+      return { Err: error };
     }
   }
 }

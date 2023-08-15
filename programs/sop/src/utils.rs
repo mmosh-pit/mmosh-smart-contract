@@ -6,10 +6,10 @@ use crate::{
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, Transfer};
 use mpl_token_metadata::{
-    instruction::verify_sized_collection_item,
+    instruction::{builders::Verify, verify_sized_collection_item, InstructionBuilder},
     state::{Metadata, TokenMetadataAccount},
 };
-use solana_program::program::invoke_signed;
+use solana_program::program::{invoke, invoke_signed};
 
 pub fn transfer_tokens<'info>(
     from: AccountInfo<'info>,
@@ -19,9 +19,9 @@ pub fn transfer_tokens<'info>(
     amount: u64,
 ) -> Result<()> {
     let cpi_accounts = Transfer {
-        authority,
-        to,
         from,
+        to,
+        authority,
     };
     token::transfer(CpiContext::new(token_program, cpi_accounts), amount)?;
     Ok(())
@@ -51,34 +51,32 @@ pub fn transfer_tokens_from_main<'info>(
 }
 
 pub fn verify_collection_item_by_main<'info>(
-    mint: AccountInfo<'info>,
     metadata: AccountInfo<'info>,
     collection: AccountInfo<'info>,
     collection_metadata: AccountInfo<'info>,
     collection_edition: AccountInfo<'info>,
     collection_authority_record: AccountInfo<'info>,
-    payer: AccountInfo<'info>,
     main_state: &Account<'info, MainState>,
     mpl_program: AccountInfo<'info>,
     system_program: AccountInfo<'info>,
+    sysvar_instructions: AccountInfo<'info>,
 ) -> Result<()> {
-    let ix = verify_sized_collection_item(
-        mpl_program.key(),
-        metadata.key(),
-        main_state.key(),
-        payer.key(),
-        mint.key(),
-        collection.key(),
-        collection_edition.key(),
-        // Some(collection_authority_record.key()),
-        None,
-    );
+    let ix = Verify {
+        collection_metadata: Some(collection_metadata.key()),
+        metadata: metadata.key(),
+        authority: main_state.key(),
+        collection_mint: Some(collection.key()),
+        collection_master_edition: Some(collection_edition.key()),
+        system_program: system_program.key(),
+        sysvar_instructions: sysvar_instructions.key(),
+        delegate_record: Some(collection_authority_record.key()),
+        args: mpl_token_metadata::instruction::VerificationArgs::CollectionV1,
+    }
+    .instruction();
 
     invoke_signed(
         &ix,
         &[
-            mint,
-            payer,
             metadata,
             main_state.to_account_info(),
             collection,
@@ -86,7 +84,8 @@ pub fn verify_collection_item_by_main<'info>(
             collection_edition,
             mpl_program,
             system_program,
-            // collection_authority_record,
+            collection_authority_record,
+            sysvar_instructions,
         ],
         &[&[SEED_MAIN_STATE, &[main_state._bump]]],
     )?;
@@ -95,7 +94,6 @@ pub fn verify_collection_item_by_main<'info>(
 }
 
 pub fn get_vault_id(profile_mint: Pubkey) -> Pubkey {
-    msg!("profile: {}", profile_mint);
     return Pubkey::find_program_address(&[SEED_VAULT, profile_mint.as_ref()], &crate::ID).0;
 }
 

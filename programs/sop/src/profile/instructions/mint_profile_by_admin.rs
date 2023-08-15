@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Mint, Token, TokenAccount},
+    token::{self, Mint, MintTo, Token, TokenAccount},
 };
 use mpl_token_metadata::{
     instruction::{
-        builders::{Burn, Create},
-        verify_sized_collection_item, InstructionBuilder,
+        builders::{Burn, Create, Mint as MintNft, Verify},
+        verify_sized_collection_item, InstructionBuilder, MintArgs,
     },
     state::{
         AssetData, Creator, PrintSupply, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA,
@@ -67,7 +67,7 @@ pub fn mint_profile_by_admin(
     }
     {
         //NOTE: created mint collection verifiaction
-        // ctx.accounts.verify_collection_item(ctx.program_id)?;
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
     }
     Ok(())
 }
@@ -76,9 +76,6 @@ pub fn mint_profile_by_admin(
 pub struct AMintProfileByAdmin<'info> {
     #[account(mut, address = main_state.owner @ MyError::OnlyOwnerCanCall)]
     pub admin: Signer<'info>,
-    ///CHECK:
-    #[account(mut)]
-    pub admin_ata: AccountInfo<'info>,
 
     #[account(
         mut,
@@ -87,9 +84,20 @@ pub struct AMintProfileByAdmin<'info> {
     )]
     pub main_state: Box<Account<'info, MainState>>,
 
-    ///CHECK:
-    #[account(mut, signer)]
-    pub profile: AccountInfo<'info>,
+    #[account(
+        mut,
+        mint::decimals = 0,
+        mint::authority = admin,
+        mint::freeze_authority = admin
+    )]
+    pub profile: Box<Account<'info, Mint>>,
+
+    #[account(
+        mut,
+        token::mint = profile,
+        token::authority = admin,
+    )]
+    pub admin_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -183,7 +191,7 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(address = MPL_ID)]
     pub mpl_program: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
-    pub ata_program: Program<'info, AssociatedToken>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
@@ -197,10 +205,18 @@ impl<'info> AMintProfileByAdmin<'info> {
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.profile_metadata.to_account_info();
         let edition = self.profile_edition.to_account_info();
-        let ata_program = self.ata_program.to_account_info();
+        let ata_program = self.associated_token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
+
+        //Mint a token
+        // let cpi_mint_accounts = MintTo {
+        //     authority: admin.clone(),
+        //     mint: mint.clone(),
+        //     to: admin_ata.clone(),
+        // };
+        // token::mint_to(CpiContext::new(token_program.clone(), cpi_mint_accounts), 1)?;
 
         let asset_data = AssetData {
             name,
@@ -228,7 +244,7 @@ impl<'info> AMintProfileByAdmin<'info> {
             mint: mint.key(),
             payer: admin.key(),
             authority: admin.key(),
-            initialize_mint: true,
+            initialize_mint: false,
             system_program: system_program.key(),
             metadata: metadata.key(),
             update_authority: main_state.key(),
@@ -247,17 +263,17 @@ impl<'info> AMintProfileByAdmin<'info> {
         invoke_signed(
             &ix,
             &[
-                mint,
-                admin,
-                admin_ata,
-                metadata,
-                edition,
+                mint.clone(),
+                admin.clone(),
+                // admin_ata,
+                metadata.clone(),
+                edition.clone(),
                 main_state.to_account_info(),
-                mpl_program,
-                ata_program,
-                token_program,
-                system_program,
-                sysvar_instructions,
+                mpl_program.clone(),
+                ata_program.clone(),
+                token_program.clone(),
+                system_program.clone(),
+                sysvar_instructions.clone(),
             ],
             &[&[SEED_MAIN_STATE, &[main_state._bump]]],
         )?;
@@ -265,10 +281,9 @@ impl<'info> AMintProfileByAdmin<'info> {
         Ok(())
     }
 
-    /// collection verification for created activation token
     pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
         let mint = self.profile.to_account_info();
-        let user = self.admin.to_account_info();
+        let admin = self.admin.to_account_info();
         let system_program = self.system_program.to_account_info();
         let token_program = self.token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
@@ -278,48 +293,19 @@ impl<'info> AMintProfileByAdmin<'info> {
         let collection_metadata = self.collection_metadata.to_account_info();
         let collection_edition = self.collection_edition.to_account_info();
         let collection_authority_record = self.collection_authority_record.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
         verify_collection_item_by_main(
-            mint,
             metadata,
             collection,
             collection_metadata,
             collection_edition,
             collection_authority_record,
-            user,
             main_state,
             mpl_program,
             system_program,
+            sysvar_instructions,
         )?;
-
-        // let ix = verify_sized_collection_item(
-        //     mpl_program.key(),
-        //     metadata.key(),
-        //     main_state.key(),
-        //     user.key(),
-        //     mint.key(),
-        //     collection.key(),
-        //     collection_edition.key(),
-        //     Some(collection_authority_record.key()),
-        // );
-        //
-        // invoke_signed(
-        //     &ix,
-        //     &[
-        //         mint,
-        //         user,
-        //         metadata,
-        //         main_state.to_account_info(),
-        //         collection,
-        //         collection_metadata,
-        //         collection_edition,
-        //         collection_authority_record,
-        //         system_program,
-        //         mpl_program,
-        //     ],
-        //     &[&[SEED_MAIN_STATE, &[main_state._bump]]],
-        // )?;
-
         Ok(())
     }
 }
