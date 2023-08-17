@@ -11,13 +11,16 @@ pub struct MainState {
     //It's genesis NFT(First GENESIS NFT)
     // pub genesis_fake_id: Pubkey,
     // pub activation_token_collection_id: Pubkey,
-    pub usdc_mint: Pubkey,
+    pub opos_token: Pubkey,
     pub profile_minting_usdc_price: u64,
     pub royalty_for_minting: MintingRoyaltyInfo,
     pub royalty_for_trading: TradingRoyaltyInfo,
     pub seller_fee_basis_points: u16, //NOTE: may be later change
     pub _bump: u8,
     pub total_minted_profile: u64,
+
+    pub brand_collection: Pubkey,
+    pub profile_collection: Pubkey,
 }
 
 impl MainState {
@@ -47,7 +50,7 @@ impl MainState {
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy)]
 pub struct MainStateInput {
     pub profile_minting_usdc_price: u64,
-    pub usdc_mint: Pubkey,
+    pub opos_token: Pubkey,
     pub royalty_for_minting: MintingRoyaltyInfo,
     pub royalty_for_trading: TradingRoyaltyInfo,
     // pub activation_token_collection_id: Pubkey,
@@ -56,7 +59,7 @@ pub struct MainStateInput {
 impl MainStateInput {
     pub fn set_value(&self, mut state: &mut MainState) {
         // state.activation_token_collection_id = self.activation_token_collection_id;
-        state.usdc_mint = self.usdc_mint;
+        state.opos_token = self.opos_token;
         state.royalty_for_minting = self.royalty_for_minting;
         state.royalty_for_trading = self.royalty_for_trading;
         state.profile_minting_usdc_price = self.profile_minting_usdc_price;

@@ -1,5 +1,5 @@
-import { web3 } from '@project-serum/anchor'
 import { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
+import { web3 } from '@project-serum/anchor';
 import { Sop } from "../target/types/sop";
 
 const mainStateTypeName = "mainState";
@@ -29,3 +29,11 @@ export type _MintProfileInput = {
   uri?: string,
   parentProfile: string | web3.PublicKey
 }
+
+export type _MintProfileByAtInput = {
+  name?: string,
+  symbol?: string,
+  uri?: string,
+  activationToken: string | web3.PublicKey
+}
+

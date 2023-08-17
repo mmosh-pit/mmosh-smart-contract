@@ -16,4 +16,10 @@ pub enum MyError {
 
     #[msg("Genesis nft already created")]
     GenesisNftAlreadyMinted,
+
+    #[msg("Activation token not found")]
+    ActivationTokenNotFound,
+
+    #[msg("Activation Token already initialize")]
+    ActivationTokenAlreadyInitialize,
 }

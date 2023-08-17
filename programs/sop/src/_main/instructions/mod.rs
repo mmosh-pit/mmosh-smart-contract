@@ -6,3 +6,6 @@ pub use update_main_state::*;
 
 pub mod update_main_state_owner;
 pub use update_main_state_owner::*;
+
+pub mod set_native_collections;
+pub use set_native_collections::*;

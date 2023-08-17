@@ -5,6 +5,7 @@ use anchor_lang::prelude::*;
 pub struct ProfileState {
     pub lineage: LineageInfo,
     pub mint: Pubkey,
+    pub activation_token: Option<Pubkey>,
 }
 
 impl ProfileState {

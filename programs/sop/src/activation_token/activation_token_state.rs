@@ -4,7 +4,8 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct ActivationTokenState {
     // lineage: LineageInfo,
-    pub parent_fake_id: Pubkey,
+    pub parent_profile: Pubkey,
+    pub creator: Pubkey,
 }
 
 impl ActivationTokenState {

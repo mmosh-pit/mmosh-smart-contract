@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::* ;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Mint, Token, TokenAccount, MintTo, InitializeMint, InitializeAccount},
@@ -98,13 +98,13 @@ pub fn mint_profile(
     (minting_cost as u128 * main_state.royalty_for_minting.ggrand_parent as u128 / 100u128) as u64
         )?;
 
-        transfer_tokens(
-            from.clone(),
-            ctx.accounts.uncle_vault_usdc_ata.to_account_info(),
-            user.clone(),
-            token_program.to_account_info(),
-    (minting_cost as u128 * main_state.royalty_for_minting.uncle_psy as u128 / 100u128) as u64
-        )?;
+    //     transfer_tokens(
+    //         from.clone(),
+    //         ctx.accounts.ggrand_parent_vault_usdc_ata.to_account_info(),
+    //         user.clone(),
+    //         token_program.to_account_info(),
+    // (minting_cost as u128 * main_state.royalty_for_minting.uncle_psy as u128 / 100u128) as u64
+    //     )?;
 
     }
     {
@@ -142,6 +142,7 @@ pub struct AMintProfile<'info> {
         mut,
         token::mint = profile,
         token::authority = user,
+        constraint = user_ata.amount == 1,
     )]
     pub user_ata: Box<Account<'info, TokenAccount>>,
 
@@ -265,44 +266,44 @@ pub struct AMintProfile<'info> {
     #[account(
         mut,
         token::authority = user,
-        token::mint = main_state.usdc_mint,
+        token::mint = main_state.opos_token,
     )]
     pub user_usdc_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         token::authority = parent_profile_state.lineage.creator,
-        token::mint = main_state.usdc_mint,
+        token::mint = main_state.opos_token,
     )]
     pub creator_usdc_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         token::authority = get_vault_id(parent_profile_state.mint),
-        token::mint = main_state.usdc_mint,
+        token::mint = main_state.opos_token,
     )]
     pub parent_vault_usdc_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         token::authority = get_vault_id(parent_profile_state.lineage.parent),
-        token::mint = main_state.usdc_mint,
+        token::mint = main_state.profile_collection,
     )]
     pub grand_parent_vault_usdc_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         token::authority = get_vault_id(parent_profile_state.lineage.grand_parent),
-        token::mint = main_state.usdc_mint,
+        token::mint = main_state.profile_collection,
     )]
     pub ggrand_parent_vault_usdc_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
-        token::authority = get_vault_id(parent_profile_state.lineage.uncle_psy),
-        token::mint = main_state.usdc_mint,
+        token::authority = get_vault_id(parent_profile_state.lineage.ggreate_grand_parent),
+        token::mint = main_state.profile_collection,
     )]
-    pub uncle_vault_usdc_ata: Box<Account<'info, TokenAccount>>,
+    pub ggreate_grand_parent_usdc_ata: Box<Account<'info, TokenAccount>>,
 }
 
 impl<'info> AMintProfile<'info> {

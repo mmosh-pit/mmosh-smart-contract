@@ -1,12 +1,13 @@
 import { web3, AnchorProvider } from '@project-serum/anchor'
 import { BaseSpl } from './base/baseSpl'
 import { web3Consts } from './web3Consts'
+import { ProfileState } from './web3Types'
 
 //extra
 import fs from 'fs'
 
 const log = console.log;
-const { usdcMint } = web3Consts;
+const { oposToken: usdcMint } = web3Consts;
 
 export function calcNonDecimalValue(value: number, decimals: number): number {
   return Math.trunc(value * (Math.pow(10, decimals)))
@@ -38,4 +39,21 @@ export async function __mintUsdc(provider: AnchorProvider) {
     log("Error on Usdc Minting: ", error)
   }
   return { txSignature, mint: mintKp.publicKey };
+}
+
+//Type parsing
+export function parseProfileState(state: ProfileState) {
+  return {
+    profileMint: state.mint.toBase58(),
+    lineage: {
+      creator: state.lineage.creator.toBase58(),
+      parent: state.lineage.parent.toBase58(),
+      grandParent: state.lineage.grandParent.toBase58(),
+      greatGrandParent: state.lineage.greatGrandParent.toBase58(),
+      unclePsy: state.lineage.ggreateGrandParent.toBase58(),
+      generation: state.lineage.generation.toNumber(),
+      totalChild: state.lineage.totalChild.toNumber(),
+    },
+    activationToken: state.activationToken?.toBase58(),
+  }
 }

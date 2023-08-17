@@ -25,7 +25,7 @@ const {
   tokenProgram,
   sysvarInstructions,
   Seeds,
-  usdcMint
+  oposToken: usdcMint
 } = web3Consts;
 const log = console.log;
 
@@ -70,6 +70,13 @@ export class Connectivity {
   __getProfileStateAccount(mint: web3.PublicKey): web3.PublicKey {
     return web3.PublicKey.findProgramAddressSync([
       Seeds.profileState,
+      mint.toBuffer()
+    ], this.programId)[0]
+  }
+
+  __getCollectionStateAccount(mint: web3.PublicKey): web3.PublicKey {
+    return web3.PublicKey.findProgramAddressSync([
+      Seeds.collectionState,
       mint.toBuffer()
     ], this.programId)[0]
   }
@@ -164,7 +171,7 @@ export class Connectivity {
   //   }
   // }
 
-  async createCollection(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
+  async createProfileCollection(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
     try {
       this.reinit();
       let {
@@ -183,6 +190,7 @@ export class Connectivity {
       const metadata = BaseMpl.getMetadataAccount(mint)
       const edition = BaseMpl.getEditionAccount(mint)
       const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
+      const collectionState = this.__getCollectionStateAccount(mint)
 
       const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
         mintAuthority: admin,
@@ -198,7 +206,7 @@ export class Connectivity {
       const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
       this.txis.push(cuBudgetIncIx)
 
-      const ix = await this.program.methods.createCollection(name, symbol, uri).accounts({
+      const ix = await this.program.methods.createProfileCollection(name, symbol, uri).accounts({
         admin,
         adminAta,
         mainState: this.mainState,
@@ -207,6 +215,7 @@ export class Connectivity {
         collectionEdition: edition,
         collectionMetadata: metadata,
         collectionAuthorityRecord,
+        collectionState,
         mplProgram,
         tokenProgram,
         systemProgram,
@@ -227,7 +236,33 @@ export class Connectivity {
     }
   }
 
-  async mintProfileByAdmin(input: MintProfileByAdminInput, collection: web3.PublicKey): Promise<Result<TxPassType<{ profile: string }>, any>> {
+  // async setMembershipCollection(collection: string | web3.PublicKey): Promise<Result<TxPassType<any>, any>> {
+  //   try {
+  //     if (typeof collection == 'string') collection = new web3.PublicKey(collection)
+  //     const signature = await this.program.methods.setMembershipCollection(collection).accounts({ owner: this.provider.publicKey, mainState: this.mainState }).rpc();
+  //     return {
+  //       Ok: { signature }
+  //     }
+  //   } catch (e) {
+  //     log({ error: e })
+  //     return { Err: e };
+  //   }
+  // }
+
+  // async setBrandCollection(collection: string | web3.PublicKey): Promise<Result<TxPassType<any>, any>> {
+  //   try {
+  //     if (typeof collection == 'string') collection = new web3.PublicKey(collection)
+  //     const signature = await this.program.methods.setBrandCollection(collection).accounts({ owner: this.provider.publicKey, mainState: this.mainState }).rpc();
+  //     return {
+  //       Ok: { signature }
+  //     }
+  //   } catch (e) {
+  //     log({ error: e })
+  //     return { Err: e };
+  //   }
+  // }
+
+  async mintGenesisProfile(input: MintProfileByAdminInput, collection: web3.PublicKey): Promise<Result<TxPassType<{ profile: string }>, any>> {
     try {
       this.reinit();
       const admin = this.provider.publicKey;
@@ -239,7 +274,9 @@ export class Connectivity {
       const profileEdition = BaseMpl.getEditionAccount(profile)
       const collectionMetadata = BaseMpl.getMetadataAccount(collection)
       const collectionEdition = BaseMpl.getEditionAccount(collection)
+      const collectionState = this.__getCollectionStateAccount(collection)
       const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(collection, this.mainState)
+      const subCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, this.mainState)
       const adminAta = getAssociatedTokenAddressSync(profile, admin);
 
       const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
@@ -252,11 +289,10 @@ export class Connectivity {
       })
       const mintTx = new web3.Transaction().add(...mintIxs)
       const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
-
       const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
       this.txis.push(cuBudgetIncIx)
 
-      const ix = await this.program.methods.mintProfileByAdmin(input).accounts({
+      const ix = await this.program.methods.mintGenesisProfile(input).accounts({
         admin,
         adminAta,
         profile,
@@ -272,6 +308,8 @@ export class Connectivity {
         collectionEdition,
         collectionMetadata,
         collectionAuthorityRecord,
+        collectionState,
+        subCollectionAuthorityRecord,
         sysvarInstructions,
       }).instruction();
       this.txis.push(ix)
@@ -279,7 +317,6 @@ export class Connectivity {
       const tx = new web3.Transaction().add(...this.txis)
       this.txis = []
       const signature = await this.provider.sendAndConfirm(tx)
-
       return {
         Ok: { signature, info: { profile: profile.toBase58() } }
       }

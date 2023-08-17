@@ -9,7 +9,7 @@ import { web3Consts } from './web3Consts'
 import { calcNonDecimalValue, __mintUsdc } from "./utils";
 
 const log = console.log;
-const { usdcMint } = web3Consts;
+const { oposToken } = web3Consts;
 
 describe("sop", () => {
   // Configure the client to use the local cluster.
@@ -36,7 +36,7 @@ describe("sop", () => {
     const accountInfo = await connection.getAccountInfo(adConn.mainState)
     if (accountInfo != null) return
     const res = await adConn.initMainState({
-      usdcMint,
+      oposToken,
       profileMintingUsdcPrice: new BN(calcNonDecimalValue(0.02, 6)),
       royaltyForMinting: {
         creator: 60,
@@ -60,7 +60,7 @@ describe("sop", () => {
 
   let collection: web3.PublicKey = null;
   it("create Collections", async () => {
-    const res = await adConn.createCollection({
+    const res = await adConn.createProfileCollection({
       name: "Hello",
     })
     // log({ res })
@@ -75,17 +75,17 @@ describe("sop", () => {
     const grandParent = web3.Keypair.generate().publicKey;
     const greatGrandParent = web3.Keypair.generate().publicKey;
     const creator = web3.Keypair.generate().publicKey;
-    const unclePsy = web3.Keypair.generate().publicKey;
+    const ggreateGrandParent = web3.Keypair.generate().publicKey;
     const parentMint = web3.Keypair.generate().publicKey;
 
-    const res = await adConn.mintProfileByAdmin({
-      parentMintLineage: {
+    const res = await adConn.mintGenesisProfile({
+      lineage: {
         generation: new BN(2),
         parent,
         grandParent,
         greatGrandParent,
         creator,
-        unclePsy,
+        ggreateGrandParent,
         totalChild: new BN(3),//not require
       },
       uri: "",
@@ -163,6 +163,7 @@ describe("sop", () => {
   //   const mainState = await adConn.getMainStateInfo();
   //   log({ mainState })
   // })
+
 });
 
 // WinSeparatorxxx guifg=#665c54 guibg=#1d2021
