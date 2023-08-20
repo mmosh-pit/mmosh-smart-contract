@@ -5,8 +5,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{
     instruction::{
+        approve_collection_authority,
         builders::{Burn, Create},
-        verify_sized_collection_item, InstructionBuilder, approve_collection_authority,
+        verify_sized_collection_item, InstructionBuilder,
     },
     state::{
         AssetData, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED,
@@ -75,7 +76,7 @@ pub struct AMintProfileByAt<'info> {
         mut,
         token::mint = activation_token,
         token::authority = user,
-        constraint = user_activation_token_ata.amount >= 1,
+        constraint = user_activation_token_ata.amount >= 1 @ MyError::ActivationTokenNotFound,
     )]
     pub user_activation_token_ata: Box<Account<'info, TokenAccount>>,
 
@@ -336,10 +337,10 @@ impl<'info> AMintProfileByAt<'info> {
         let main_state = &mut self.main_state;
         let collection = self.collection.to_account_info();
         let collection_edition = self.collection_edition.to_account_info();
-        let collection_metadata= self.collection_metadata.to_account_info();
+        let collection_metadata = self.collection_metadata.to_account_info();
         let collection_authority_record = self.collection_authority_record.to_account_info();
         let system_program = self.system_program.to_account_info();
-        let sysvar_instructions= self.sysvar_instructions.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
         verify_collection_item_by_main(
             metadata,

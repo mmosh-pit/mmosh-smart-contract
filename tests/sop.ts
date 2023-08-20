@@ -6,7 +6,7 @@ import { Sop } from "../target/types/sop";
 import { Connectivity as AdConn } from "./admin"
 import { Connectivity as UserConn } from "./user"
 import { web3Consts } from './web3Consts'
-import { calcNonDecimalValue, __mintUsdc } from "./utils";
+import { calcNonDecimalValue, __mintOposToken } from "./utils";
 
 const log = console.log;
 const { oposToken } = web3Consts;
@@ -24,7 +24,7 @@ describe("sop", () => {
   const userConn = new UserConn(provider, programId);
 
   it("minting usdc", async () => {
-    const { mint, txSignature } = await __mintUsdc(provider);
+    const { mint, txSignature } = await __mintOposToken(provider);
     // usdcMint = mint;
     // log({
     //   usdcMint: mint.toBase58(),

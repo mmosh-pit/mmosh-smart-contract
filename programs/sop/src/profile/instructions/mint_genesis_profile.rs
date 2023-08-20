@@ -60,7 +60,11 @@ pub fn mint_genesis_profile(
         // profile_state.lineage.total_child = input.lineage.total_child;
         profile_state.lineage.generation = 0;
         profile_state.lineage.total_child = 0;
-        collection_state.genesis_profile = Some(ctx.accounts.profile.key());
+
+        if collection_state.genesis_profile != System::id() {
+            return anchor_lang::err!(MyError::AlreadySet);
+        }
+        collection_state.genesis_profile = ctx.accounts.profile.key();
 
         //TODO: update some main state if fiels are avaible (may be in future)
         main_state.total_minted_profile += 1;

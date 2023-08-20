@@ -22,7 +22,12 @@ use crate::{
     utils::{_verify_collection, verify_collection_item_by_main},
 };
 
-pub fn init_activation_token(ctx: Context<AInitActivationToken>) -> Result<()> {
+pub fn init_activation_token(
+    ctx: Context<AInitActivationToken>,
+    name: String,
+    symbol: String,
+    uri: String,
+) -> Result<()> {
     {
         //NOTE: setup and validation
         let main_state = &mut ctx.accounts.main_state;
@@ -34,6 +39,7 @@ pub fn init_activation_token(ctx: Context<AInitActivationToken>) -> Result<()> {
         _verify_collection(&profile_metadata, main_state.profile_collection);
 
         //state changes
+        msg!("activaiton token: {:?}", profile_state.activation_token);
         if profile_state.activation_token.is_some() {
             return anchor_lang::err!(MyError::ActivationTokenAlreadyInitialize);
         }
@@ -45,7 +51,7 @@ pub fn init_activation_token(ctx: Context<AInitActivationToken>) -> Result<()> {
     }
     {
         //NOTE: minting
-        ctx.accounts.init_token()?;
+        ctx.accounts.init_token(name, symbol, uri)?;
     }
     {
         //NOTE: created mint collection verifiaction
@@ -63,7 +69,7 @@ pub struct AInitActivationToken<'info> {
         mut,
         token::mint = profile,
         token::authority = user,
-        constraint = user_profile_ata.amount == 1,
+        constraint = user_profile_ata.amount == 1 @ MyError::OnlyProfileHolderAllow,
     )]
     pub user_profile_ata: Box<Account<'info, TokenAccount>>,
 
@@ -163,13 +169,13 @@ pub struct AInitActivationToken<'info> {
     ///CHECK:
     #[account(address = MPL_ID)]
     pub mpl_program: AccountInfo<'info>,
-    pub ata_program: Program<'info, AssociatedToken>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> AInitActivationToken<'info> {
-    pub fn init_token(&mut self) -> Result<()> {
+    pub fn init_token(&mut self, name: String, symbol: String, uri: String) -> Result<()> {
         let mint = self.activation_token.to_account_info();
         let user = self.user.to_account_info();
         let user_activation_token_ata = self.user_activation_token_ata.to_account_info();
@@ -178,13 +184,13 @@ impl<'info> AInitActivationToken<'info> {
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.activation_token_metadata.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
-        let ata_program = self.ata_program.to_account_info();
+        let ata_program = self.associated_token_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
-        let name = String::from("Activation Token");
-        let symbol = String::from("AT");
-        let uri = String::from("");
+        // let name = String::from("Activation Token");
+        // let symbol = String::from("AT");
+        // let uri = String::from("");
 
         let asset_data = AssetData {
             name,
@@ -255,7 +261,8 @@ impl<'info> AInitActivationToken<'info> {
         let collection = self.profile.to_account_info();
         let collection_edition = self.profile_edition.to_account_info();
         let collection_metadata = self.profile_metadata.to_account_info();
-        let collection_authority_record = self.profile_collection_authority_record.to_account_info();
+        let collection_authority_record =
+            self.profile_collection_authority_record.to_account_info();
         let system_program = self.system_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
 

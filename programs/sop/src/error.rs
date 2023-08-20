@@ -5,6 +5,9 @@ pub enum MyError {
     #[msg("first erorr")]
     FirstError,
 
+    #[msg("Value assing already")]
+    AlreadySet,
+
     #[msg("This method can only be called by onwer")]
     OnlyOwnerCanCall,
 
@@ -22,4 +25,7 @@ pub enum MyError {
 
     #[msg("Activation Token already initialize")]
     ActivationTokenAlreadyInitialize,
+
+    #[msg("Only Profile Holder can call")]
+    OnlyProfileHolderAllow,
 }

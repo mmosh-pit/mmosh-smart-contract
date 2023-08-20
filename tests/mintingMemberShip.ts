@@ -6,7 +6,7 @@ import { assert } from "chai";
 import { Sop } from "../target/types/sop";
 import { Connectivity as AdConn } from "./admin";
 import { Connectivity as UserConn } from "./user";
-import { calcNonDecimalValue, parseProfileState, __mintUsdc } from "./utils";
+import { calcNonDecimalValue, parseProfileState, __mintOposToken } from "./utils";
 import { web3Consts } from './web3Consts';
 
 const log = console.log;
@@ -25,56 +25,122 @@ describe("sop", () => {
   const userConn = new UserConn(provider, programId);
   const metaplex = new Metaplex(provider.connection)
 
-  it("minting usdc", async () => {
-    const { mint, txSignature } = await __mintUsdc(provider);
-    // usdcMint = mint;
-    // log({
-    //   usdcMint: mint.toBase58(),
-    //   usdcMintTxSignature: txSignature
-    // })
+  const receiver = new web3.PublicKey("85YaBFhbwuqPiRVNrXdMJwdt1qjdxbtypGcFBc6Tp7qA")
+
+
+  // it("minting opos token", async () => {
+  //   const { mint, txSignature } = await __mintOposToken(provider);
+  //   // usdcMint = mint;
+  //   // log({
+  //   //   usdcMint: mint.toBase58(),
+  //   //   usdcMintTxSignature: txSignature
+  //   // })
+  // })
+  //
+  // it("Initialise Main State!", async () => {
+  //   const accountInfo = await connection.getAccountInfo(adConn.mainState)
+  //   const profileMintingUsdcPrice = new BN(calcNonDecimalValue(0.02, 6))
+  //   if (accountInfo != null) return
+  //   const res = await adConn.initMainState({
+  //     oposToken,
+  //     profileMintingUsdcPrice,
+  //     royaltyForMinting: {
+  //       creator: 60,
+  //       parent: 20,
+  //       grandParent: 10,
+  //       ggrandParent: 7,
+  //       unclePsy: 3,
+  //     },
+  //     royaltyForTrading: {
+  //       seller: 80,
+  //       creator: 5,
+  //       parent: 3,
+  //       curator: 3,
+  //       unclePsy: 2,
+  //     }
+  //   })
+  //   // log({ res })
+  //   // if (res?.Err) throw "initialise mainstate failed"
+  //   assert(res?.Ok, "initialise mainstate failed")
+  // });
+  //
+  // it("creating profile Collections", async () => {
+  //   const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
+  //   //skipping membershipPassCollection mintign if it already minted
+  //   if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) return;
+  //
+  //   const name = "Membership Collection"
+  //   const res = await adConn.createProfileCollection({
+  //     name,
+  //   })
+  //
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, profile: res.Ok.info.collection })
+  //   const collectionId = new web3.PublicKey(res.Ok.info.collection)
+  // })
+  //
+  //
+  // let __profile: web3.PublicKey = null
+  // it("initialise genesis profile", async () => {
+  //   const parent = web3.Keypair.generate().publicKey;
+  //   const grandParent = web3.Keypair.generate().publicKey;
+  //   const greatGrandParent = web3.Keypair.generate().publicKey;
+  //   const creator = web3.Keypair.generate().publicKey;
+  //   const ggreateGrandParent = web3.Keypair.generate().publicKey;
+  //   const parentMint = web3.Keypair.generate().publicKey;
+  //
+  //   const res = await adConn.mintGenesisProfile({
+  //     lineage: {
+  //       generation: new BN(1),
+  //       parent,
+  //       grandParent,
+  //       greatGrandParent,
+  //       creator,
+  //       ggreateGrandParent,
+  //       totalChild: new BN(0),//not require
+  //     },
+  //     uri: "",
+  //     symbol: "",
+  //     name: "Profile 1(Admin)",
+  //     parentMint,
+  //   })
+  //
+  //   assert(res.Ok, "Failed to initialise genesis profile")
+  //   const genesisProfile = res.Ok.info.profile
+  //   __profile = new web3.PublicKey(genesisProfile)
+  //
+  //   log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
+  //   const nftInfo = await metaplex.nfts().findByMint({ mintAddress: new web3.PublicKey(genesisProfile) })
+  //   // assert(nftInfo?.collection?.verified, "collection verification failed")
+  // })
+  //
+  // let activationToken: web3.PublicKey = null
+  // it("Initialise activation token", async () => {
+  //   const __collection = (await adConn.program.account.mainState.fetch(adConn.mainState)).profileCollection;
+  //   // const collectionInfo = ()
+  //   const res = await adConn.initActivationToken({ name: "Activation Token" })
+  //   // const res = await userConn.initActivationToken({ profile: __profile, name: "Activation Token" })
+  //   assert(res.Ok, "Failed to initialise activation Token")
+  //   // log("ActivationToken: ", res.Ok.info.activationToken)
+  //   activationToken = new web3.PublicKey(res.Ok.info.activationToken)
+  // })
+
+  it("Mint activationToken", async () => {
+    const res = await adConn.mintActivationToken(receiver);
+    // const res = await userConn.mintActivationToken(activationToken);
+    log({signature: res.Ok.signature})
+    assert(res.Ok, "Failed to mint activation Token")
   })
 
-  it("Initialise Main State!", async () => {
-    const accountInfo = await connection.getAccountInfo(adConn.mainState)
-    const profileMintingUsdcPrice = new BN(calcNonDecimalValue(0.02, 6))
-    if (accountInfo != null) return
-    const res = await adConn.initMainState({
-      oposToken,
-      profileMintingUsdcPrice,
-      royaltyForMinting: {
-        creator: 60,
-        parent: 20,
-        grandParent: 10,
-        ggrandParent: 7,
-        unclePsy: 3,
-      },
-      royaltyForTrading: {
-        seller: 80,
-        creator: 5,
-        parent: 3,
-        curator: 3,
-        unclePsy: 2,
-      }
-    })
-    // log({ res })
-    // if (res?.Err) throw "initialise mainstate failed"
-    assert(res?.Ok, "initialise mainstate failed")
-  });
+  // it("Mint Profile by ActivationToken", async () => {
+  //   const res = await userConn.mintProfileByActivationToken({ activationToken, name: "Profile By At" })
+  //   assert(res.Ok, "Failed to mint Profile")
+  // })
 
-  it("creating profile Collections", async () => {
-    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    //skipping membershipPassCollection mintign if it already minted
-    if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) return;
-
-    const name = "Membership Collection"
-    const res = await adConn.createProfileCollection({
-      name,
-    })
-
-    assert(res?.Ok, "Unable to create collection")
-    log({ sign: res.Ok.signature, profile: res.Ok.info.collection })
-    const collectionId = new web3.PublicKey(res.Ok.info.collection)
-  })
+  // it("getInfo", async () => {
+  //   const res = await userConn.getUserInfo();
+  //   log({ res })
+  // })
 
   // it("creating brand Collections", async () => {
   //   const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
@@ -92,42 +158,6 @@ describe("sop", () => {
   //   const res2 = await adConn.setBrandCollection(brandCollection)
   //   assert(res2?.Ok, "Unable to set collection")
   // })
-
-  it("initialise genesis profile", async () => {
-    const mainState = await userConn.program.account.mainState.fetch(userConn.mainState)
-    const profileCollection = mainState.profileCollection
-
-    const parent = web3.Keypair.generate().publicKey;
-    const grandParent = web3.Keypair.generate().publicKey;
-    const greatGrandParent = web3.Keypair.generate().publicKey;
-    const creator = web3.Keypair.generate().publicKey;
-    const ggreateGrandParent = web3.Keypair.generate().publicKey;
-    const parentMint = web3.Keypair.generate().publicKey;
-
-    const res = await adConn.mintGenesisProfile({
-      lineage: {
-        generation: new BN(1),
-        parent,
-        grandParent,
-        greatGrandParent,
-        creator,
-        ggreateGrandParent,
-        totalChild: new BN(0),//not require
-      },
-      uri: "",
-      symbol: "",
-      name: "Profile 1(Admin)",
-      parentMint,
-    }, profileCollection)
-
-    if (res?.Err) throw "tx failed"
-    const genesisProfile = res.Ok.info.profile
-    // log({ res, memberShipProfile })
-    log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
-    const nftInfo = await metaplex.nfts().findByMint({ mintAddress: new web3.PublicKey(genesisProfile) })
-    assert(nftInfo?.collection?.address.toBase58() == profileCollection.toBase58(), "collection missmatch")
-    assert(nftInfo?.collection?.verified, "collection verification failed")
-  })
 
   // let brandProfile: string;
   // it('Create brand Collections profile by admin', async () => {
@@ -165,24 +195,24 @@ describe("sop", () => {
   //   assert(nftInfo?.collection?.verified, "collection verification failed")
   // })
 
-  let userMemberShipProfile: string;
-  it("Creating MemberShip profile using parent Membership profile (user)", async () => {
-    const profileCollection = (await userConn.program.account.mainState.fetch(userConn.mainState)).profileCollection
-    const profileCollectionInfo = await userConn.program.account.collectionState.fetch(userConn.__getCollectionStateAccount(profileCollection));
-    const genesisProfile = profileCollectionInfo.genesisProfile
-    log({ genesisProfile: genesisProfile.toBase58() })
-
-    // const res = await userConn.mintProfileByActivationToken({
-    //   name: "Membership user 1",
-    //   parentProfile: genesisProfile,
-    // });
-    // if (res?.Err) throw "Tx failed"
-    // userMemberShipProfile = res.Ok?.info.profile;
-    // log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
-    // const userProfileStateId = userConn.__getProfileStateAccount(new web3.PublicKey(userMemberShipProfile))
-    // const userProfileState = await userConn.program.account.profileState.fetch(userProfileStateId);
-    // assert(userProfileState.lineage.parent.toBase58() == genesisProfile, "lineage parent profile missmatch")
-  })
+  // let userMemberShipProfile: string;
+  // it("Creating MemberShip profile using parent Membership profile (user)", async () => {
+  //   const profileCollection = (await userConn.program.account.mainState.fetch(userConn.mainState)).profileCollection
+  //   const profileCollectionInfo = await userConn.program.account.collectionState.fetch(userConn.__getCollectionStateAccount(profileCollection));
+  //   const genesisProfile = profileCollectionInfo.genesisProfile
+  //   log({ genesisProfile: genesisProfile.toBase58() })
+  //
+  //   const res = await userConn.mintActivationToken({
+  //     name: "Membership user 1",
+  //     activationToken,
+  //   });
+  //   if (res?.Err) throw "Tx failed"
+  //   userMemberShipProfile = res.Ok?.info.profile;
+  //   log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
+  //   const userProfileStateId = userConn.__getProfileStateAccount(new web3.PublicKey(userMemberShipProfile))
+  //   const userProfileState = await userConn.program.account.profileState.fetch(userProfileStateId);
+  //   assert(userProfileState.lineage.parent.toBase58() == genesisProfile, "lineage parent profile missmatch")
+  // })
 
   // it("get user nfts", async () => {
   //   const mainState = await userConn.program.account.mainState.fetch(userConn.mainState)

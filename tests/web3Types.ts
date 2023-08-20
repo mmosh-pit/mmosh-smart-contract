@@ -31,7 +31,7 @@ export type _MintProfileInput = {
 }
 
 export type _MintProfileByAtInput = {
-  name?: string,
+  name: string,
   symbol?: string,
   uri?: string,
   activationToken: string | web3.PublicKey

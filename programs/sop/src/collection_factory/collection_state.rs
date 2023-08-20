@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct CollectionState {
-    pub genesis_profile: Option<Pubkey>,
+    pub genesis_profile: Pubkey,
     pub collection_id: Pubkey,
 }
 

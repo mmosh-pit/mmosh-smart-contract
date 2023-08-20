@@ -98,8 +98,13 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn init_activation_token(ctx: Context<AInitActivationToken>) -> Result<()> {
-        activation_token::init_activation_token(ctx)?;
+    pub fn init_activation_token(
+        ctx: Context<AInitActivationToken>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        activation_token::init_activation_token(ctx, name, symbol, uri)?;
         Ok(())
     }
 

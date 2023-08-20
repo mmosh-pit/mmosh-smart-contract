@@ -15,7 +15,7 @@ export function calcNonDecimalValue(value: number, decimals: number): number {
 
 
 //Extra for testing
-export async function __mintUsdc(provider: AnchorProvider) {
+export async function __mintOposToken(provider: AnchorProvider) {
   const mintInfo = await provider.connection.getAccountInfo(usdcMint)
   if (mintInfo) return { txSignature: "", mint: usdcMint };
 
