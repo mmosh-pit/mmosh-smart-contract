@@ -55,7 +55,7 @@ pub fn init_activation_token(
     }
     {
         //NOTE: created mint collection verifiaction
-        // ctx.accounts.verify_collection_item(ctx.program_id)?;
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
     }
     Ok(())
 }
@@ -188,10 +188,6 @@ impl<'info> AInitActivationToken<'info> {
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
-        // let name = String::from("Activation Token");
-        // let symbol = String::from("AT");
-        // let uri = String::from("");
-
         let asset_data = AssetData {
             name,
             symbol,
@@ -201,11 +197,23 @@ impl<'info> AInitActivationToken<'info> {
                 key: self.profile.key(),
             }),
             uses: None,
-            creators: Some(vec![Creator {
-                address: user.key(),
-                verified: false,
-                share: 100,
-            }]),
+            creators: Some(vec![
+                Creator {
+                    address: main_state.key(),
+                    verified: true,
+                    share: 0,
+                },
+                Creator {
+                    address: self.profile.key(),
+                    verified: false,
+                    share: 0,
+                },
+                Creator {
+                    address: user.key(),
+                    verified: false,
+                    share: 100,
+                },
+            ]),
             collection_details: None,
             is_mutable: true, //NOTE: may be for testing
             rule_set: None,

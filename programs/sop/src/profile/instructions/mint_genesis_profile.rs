@@ -68,6 +68,7 @@ pub fn mint_genesis_profile(
 
         //TODO: update some main state if fiels are avaible (may be in future)
         main_state.total_minted_profile += 1;
+        main_state.genesis_profile = ctx.accounts.profile.key();
     }
     {
         //NOTE: minting
@@ -76,6 +77,9 @@ pub fn mint_genesis_profile(
     {
         //NOTE: created mint collection verifiaction
         ctx.accounts.verify_collection_item(ctx.program_id)?;
+    }
+    {
+        // ctx.accounts.approve_sub_collection_authority_to_main()?;
     }
     Ok(())
 }

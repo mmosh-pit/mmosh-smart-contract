@@ -93,8 +93,11 @@ pub fn verify_collection_item_by_main<'info>(
     Ok(())
 }
 
-pub fn get_vault_id(profile_mint: Pubkey) -> Pubkey {
-    return Pubkey::find_program_address(&[SEED_VAULT, profile_mint.as_ref()], &crate::ID).0;
+pub fn get_vault_pda(profile_mint: &Pubkey) -> (Pubkey, u8) {
+    let res = Pubkey::find_program_address(&[SEED_VAULT, profile_mint.as_ref()], &crate::ID);
+    // let sign_seed = [SEED_VAULT, profile_mint.as_ref(), &[res.1]].as_ref();
+
+    return res;
 }
 
 pub fn _verify_collection(metadata_account: &AccountInfo, collection_id: Pubkey) -> Result<()> {

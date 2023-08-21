@@ -43,6 +43,10 @@ pub mod sop {
         Ok(())
     }
 
+    pub fn reset_main(ctx: Context<AResetMain>) -> Result<()> {
+        Ok(())
+    }
+
     // pub fn set_membership_collection(
     //     ctx: Context<ASetNativeCollection>,
     //     collection: Pubkey,

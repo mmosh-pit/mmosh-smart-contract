@@ -147,6 +147,20 @@ export class Connectivity {
     }
   }
 
+  async resetMain(): Promise<Result<TxPassType<any>, any>> {
+    try {
+      this.reinit();
+      const signature = await this.program.methods.resetMain().accounts({
+        owner: this.provider.publicKey,
+        mainState: this.mainState,
+        systemProgram,
+      }).rpc();
+      return { Ok: { signature } };
+    } catch (e) {
+      return { Err: e };
+    }
+  }
+
   async createProfileCollection(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
     try {
       this.reinit();
@@ -212,17 +226,21 @@ export class Connectivity {
     }
   }
 
+  // async mintGenesisProfile(input: { name: string, symbol: string, uri: string }): Promise<Result<TxPassType<{ profile: string }>, any>> {
   async mintGenesisProfile(input: MintProfileByAdminInput): Promise<Result<TxPassType<{ profile: string }>, any>> {
     try {
       this.reinit();
       const admin = this.provider.publicKey;
       if (!admin) throw "Wallet not found"
       const mainState = await this.program.account.mainState.fetch(this.mainState)
+      if (mainState.genesisProfile.toBase58() != web3.SystemProgram.programId.toBase58()) {
+        return { Ok: { signature: "", info: { profile: mainState.genesisProfile.toBase58() } } }
+      }
       const collection = mainState.profileCollection
       const collectionState = this.__getCollectionStateAccount(collection)
-      const __profileCollectionInfo = await this.program.account.collectionState.fetch(collectionState)
-      const __genesisProfile = __profileCollectionInfo.genesisProfile?.toBase58()
-      if (__genesisProfile && __genesisProfile != web3.SystemProgram.programId.toBase58()) return { Ok: { signature: "", info: { profile: __profileCollectionInfo.genesisProfile?.toBase58() } } }
+      // const __profileCollectionInfo = await this.program.account.collectionState.fetch(collectionState)
+      // const __genesisProfile = __profileCollectionInfo.genesisProfile?.toBase58()
+      // if (__genesisProfile && __genesisProfile != web3.SystemProgram.programId.toBase58()) return { Ok: { signature: "", info: { profile: __profileCollectionInfo.genesisProfile?.toBase58() } } }
 
       const mintKp = web3.Keypair.generate()
       const profile = mintKp.publicKey
@@ -248,6 +266,22 @@ export class Connectivity {
       const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
       const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
       this.txis.push(cuBudgetIncIx)
+
+      // const args: MintProfileByAdminInput = {
+      //   name: input.name,
+      //   symbol: input.symbol,
+      //   uri: input.uri,
+      //   lineage: {
+      //     parent: profile,
+      //     creator: admin,
+      //     generation: new anchor.BN(1),
+      //     totalChild: new BN(0),//not require
+      //     grandParent: profile,
+      //     greatGrandParent: profile,
+      //     ggreateGrandParent: profile,
+      //   },
+      //   parentMint: profile,
+      // }
 
       const ix = await this.program.methods.mintGenesisProfile(input).accounts({
         admin,
@@ -286,8 +320,7 @@ export class Connectivity {
   async initActivationToken(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
     try {
       const user = this.provider.publicKey;
-
-
+      this.reinit();
       const mainStateInfo = await this.program.account.mainState.fetch(this.mainState)
       const collectionStateAccount = this.__getCollectionStateAccount(mainStateInfo.profileCollection)
       const collectionStateInfo = await this.program.account.collectionState.fetch(collectionStateAccount)

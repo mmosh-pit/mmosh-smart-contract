@@ -3,7 +3,7 @@ use anchor_lang::{AnchorDeserialize, AnchorSerialize};
 use mpl_token_metadata::state::{Metadata, TokenMetadataAccount};
 
 use crate::error::MyError;
-use crate::other_states::{MintingRoyaltyInfo, TradingRoyaltyInfo};
+use crate::other_states::{MintingCostDistribution, TradingPriceDistribution};
 
 #[account]
 pub struct MainState {
@@ -12,15 +12,15 @@ pub struct MainState {
     // pub genesis_fake_id: Pubkey,
     // pub activation_token_collection_id: Pubkey,
     pub opos_token: Pubkey,
-    pub profile_minting_usdc_price: u64,
-    pub royalty_for_minting: MintingRoyaltyInfo,
-    pub royalty_for_trading: TradingRoyaltyInfo,
+    pub profile_minting_cost: u64,
+    pub minting_cost_distribution: MintingCostDistribution,
+    pub trading_price_distribution: TradingPriceDistribution,
     pub seller_fee_basis_points: u16, //NOTE: may be later change
     pub _bump: u8,
     pub total_minted_profile: u64,
 
-    pub brand_collection: Pubkey,
     pub profile_collection: Pubkey,
+    pub genesis_profile: Pubkey,
 }
 
 impl MainState {
@@ -49,10 +49,10 @@ impl MainState {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy)]
 pub struct MainStateInput {
-    pub profile_minting_usdc_price: u64,
+    pub profile_minting_cost: u64,
     pub opos_token: Pubkey,
-    pub royalty_for_minting: MintingRoyaltyInfo,
-    pub royalty_for_trading: TradingRoyaltyInfo,
+    pub minting_cost_distribution: MintingCostDistribution,
+    pub trading_price_distribution: TradingPriceDistribution,
     // pub activation_token_collection_id: Pubkey,
 }
 
@@ -60,8 +60,8 @@ impl MainStateInput {
     pub fn set_value(&self, mut state: &mut MainState) {
         // state.activation_token_collection_id = self.activation_token_collection_id;
         state.opos_token = self.opos_token;
-        state.royalty_for_minting = self.royalty_for_minting;
-        state.royalty_for_trading = self.royalty_for_trading;
-        state.profile_minting_usdc_price = self.profile_minting_usdc_price;
+        state.minting_cost_distribution = self.minting_cost_distribution;
+        state.trading_price_distribution = self.trading_price_distribution;
+        state.profile_minting_cost = self.profile_minting_cost;
     }
 }

@@ -28,4 +28,7 @@ pub enum MyError {
 
     #[msg("Only Profile Holder can call")]
     OnlyProfileHolderAllow,
+
+    #[msg("Not have enough token to mint")]
+    NotEnoughTokenToMint,
 }

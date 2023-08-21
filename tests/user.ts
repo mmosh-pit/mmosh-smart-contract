@@ -101,97 +101,58 @@ export class Connectivity {
     ], this.programId)[0]
   }
 
-  async initActivationToken(input: { profile: web3.PublicKey | string, name: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
-    try {
-      this.reinit();
-      const user = this.provider.publicKey;
-      if (!user) throw "Wallet not found"
-
-      let { profile, name, symbol, uri } = input
-      symbol = symbol ?? ""
-      uri = uri ?? ""
-      if (typeof profile == 'string') profile = new web3.PublicKey(profile)
-
-      const mintKp = web3.Keypair.generate();
-      const activationToken = mintKp.publicKey;
-      const { ata: userProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
-      const profileState = this.__getProfileStateAccount(profile)
-      const profileEdition = BaseMpl.getEditionAccount(profile)
-      const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
-      const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user);
-      const profileMetadata = BaseMpl.getMetadataAccount(profile)
-      const activationTokenMetadata = BaseMpl.getMetadataAccount(activationToken)
-      const profileCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, this.mainState);
-
-      const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
-        user,
-        mainState: this.mainState,
-        activationToken,
-        profile,
-        profileState,
-        profileMetadata,
-        profileEdition,
-        userProfileAta,
-        profileCollectionAuthorityRecord,
-        sysvarInstructions,
-        activationTokenState,
-        userActivationTokenAta,
-        activationTokenMetadata,
-        associatedTokenProgram,
-        mplProgram,
-        tokenProgram,
-        systemProgram,
-      }).instruction()
-      this.txis.push(ix)
-
-      const tx = new web3.Transaction().add(...this.txis)
-      const signature = await this.provider.sendAndConfirm(tx, [mintKp]);
-
-      return { Ok: { signature, info: { activationToken: activationToken.toBase58() } } }
-    } catch (error) {
-      log({ error })
-      return { Err: error }
-    }
-  }
-
-  async mintActivationToken(activationToken: web3.PublicKey | string, receiver?: web3.PublicKey | string): Promise<Result<TxPassType<any>, any>> {
-    try {
-      this.reinit();
-      const user = this.provider.publicKey;
-      if (!user) throw "Wallet not found"
-      if (typeof activationToken == 'string') activationToken = new web3.PublicKey(activationToken)
-
-      if (!receiver) receiver = user;
-      if (typeof receiver == 'string') receiver = new web3.PublicKey(receiver)
-      const { ata: receiverAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: activationToken, owner: receiver }, this.ixCallBack)
-
-      const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
-      const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(activationTokenState)
-      const profile = activationTokenStateInfo.parentProfile
-      const profileState = this.__getProfileStateAccount(profile)
-      const { ata: minterProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
-
-      const ix = await this.program.methods.mintActivationToken(new BN(1)).accounts({
-        activationTokenState,
-        tokenProgram,
-        activationToken,
-        profile,
-        profileState,
-        minterProfileAta,
-        mainState: this.mainState,
-        minter: user,
-        receiverAta,
-      }).instruction()
-      this.txis.push(ix)
-
-      const tx = new web3.Transaction().add(...this.txis)
-      const signature = await this.provider.sendAndConfirm(tx)
-      return { Ok: { signature, info: {} } }
-    } catch (error) {
-      log({ error })
-      return { Err: error }
-    }
-  }
+  // async initActivationToken(input: { profile: web3.PublicKey | string, name: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
+  //   try {
+  //     this.reinit();
+  //     const user = this.provider.publicKey;
+  //     if (!user) throw "Wallet not found"
+  //
+  //     let { profile, name, symbol, uri } = input
+  //     symbol = symbol ?? ""
+  //     uri = uri ?? ""
+  //     if (typeof profile == 'string') profile = new web3.PublicKey(profile)
+  //
+  //     const mintKp = web3.Keypair.generate();
+  //     const activationToken = mintKp.publicKey;
+  //     const { ata: userProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
+  //     const profileState = this.__getProfileStateAccount(profile)
+  //     const profileEdition = BaseMpl.getEditionAccount(profile)
+  //     const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
+  //     const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user);
+  //     const profileMetadata = BaseMpl.getMetadataAccount(profile)
+  //     const activationTokenMetadata = BaseMpl.getMetadataAccount(activationToken)
+  //     const profileCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, this.mainState);
+  //
+  //     const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
+  //       user,
+  //       mainState: this.mainState,
+  //       activationToken,
+  //       profile,
+  //       profileState,
+  //       profileMetadata,
+  //       profileEdition,
+  //       userProfileAta,
+  //       profileCollectionAuthorityRecord,
+  //       sysvarInstructions,
+  //       activationTokenState,
+  //       userActivationTokenAta,
+  //       activationTokenMetadata,
+  //       associatedTokenProgram,
+  //       mplProgram,
+  //       tokenProgram,
+  //       systemProgram,
+  //     }).instruction()
+  //     this.txis.push(ix)
+  //
+  //     const tx = new web3.Transaction().add(...this.txis)
+  //     const signature = await this.provider.sendAndConfirm(tx, [mintKp]);
+  //
+  //     return { Ok: { signature, info: { activationToken: activationToken.toBase58() } } }
+  //   } catch (error) {
+  //     log({ error })
+  //     return { Err: error }
+  //   }
+  // }
 
   // async mint_profile(input: _MintProfileInput): Promise<Result<TxPassType<{ profile: string }>, any>> {
   //   try {
@@ -311,19 +272,23 @@ export class Connectivity {
   async mintProfileByActivationToken(input: _MintProfileByAtInput): Promise<Result<TxPassType<{ profile: string }>, any>> {
     try {
       this.reinit();
+      this.baseSpl.__reinit();
       const user = this.provider.publicKey;
       if (!user) throw "Wallet not found"
       let {
         name, symbol, uri,
         activationToken,
+        genesisProfile
       } = input;
       if (typeof activationToken == 'string') activationToken = new web3.PublicKey(activationToken)
+      if (typeof genesisProfile == 'string') genesisProfile = new web3.PublicKey(activationToken)
       symbol = symbol ?? ""
       uri = uri ?? ""
 
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(activationTokenState)
       const parentProfile = activationTokenStateInfo.parentProfile;
+      const parentProfileStateInfo = await this.program.account.profileState.fetch(this.__getProfileStateAccount(parentProfile))
       const parentProfileNftInfo = await this.metaplex.nfts().findByMint({ mintAddress: parentProfile, loadJsonMetadata: false })
       const collection = parentProfileNftInfo?.collection?.address
       if (!collection) return { Err: "(parentProfile) Collection info not found" }
@@ -342,6 +307,21 @@ export class Connectivity {
       const parentProfileState = this.__getProfileStateAccount(parentProfile)
       const subCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, this.mainState)
 
+      // const subCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, user)
+      // const userOposAta = getAssociatedTokenAddressSync(oposToken, user)
+      // const parentProfileVaultAta = getAssociatedTokenAddressSync(oposToken, this.__getValutAccount(parentProfileStateInfo.mint))
+      // const grandParentProfileVaultAta = getAssociatedTokenAddressSync(oposToken, this.__getValutAccount(parentProfileStateInfo.lineage.parent))
+      // const greatGrandParentProfileVaultAta = getAssociatedTokenAddressSync(oposToken, this.__getValutAccount(parentProfileStateInfo.lineage.grandParent))
+      // const ggreatGrandParentProfileVaultAta = getAssociatedTokenAddressSync(oposToken, this.__getValutAccount(parentProfileStateInfo.lineage.greatGrandParent))
+      // const genesisProfileVaultAta = getAssociatedTokenAddressSync(oposToken, this.__getValutAccount(genesisProfile))
+
+      const { ata: userOposAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: user, payer: user, checkCache: true }, this.ixCallBack)
+      const { ata: parentProfileVaultAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: this.__getValutAccount(parentProfileStateInfo.mint), payer: user, allowOffCurveOwner: true, checkCache: true }, this.ixCallBack)
+      const { ata: grandParentProfileVaultAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: this.__getValutAccount(parentProfileStateInfo.lineage.parent), payer: user, allowOffCurveOwner: true, checkCache: true }, this.ixCallBack)
+      const { ata: greatGrandParentProfileVaultAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: this.__getValutAccount(parentProfileStateInfo.lineage.grandParent), payer: user, allowOffCurveOwner: true, checkCache: true }, this.ixCallBack)
+      const { ata: ggreatGrandParentProfileVaultAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: this.__getValutAccount(parentProfileStateInfo.lineage.greatGrandParent), payer: user, allowOffCurveOwner: true, checkCache: true }, this.ixCallBack)
+      const { ata: genesisProfileVaultAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: oposToken, owner: genesisProfile, payer: user, allowOffCurveOwner: true, checkCache: true }, this.ixCallBack)
+
       // minting token
       const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
         mintAuthority: user,
@@ -350,11 +330,13 @@ export class Connectivity {
           tokenAmount: 1,
         }
       })
-      // const mintTx = new web3.Transaction().add(...mintIxs)
-      // const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
       this.txis.push(...mintIxs)
+      const preTx = new web3.Transaction().add(...this.txis)
+      this.txis = []
+      const preTxSign = await this.provider.sendAndConfirm(preTx, [mintKp])
+      log({ preTxSign })
 
-      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
+      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 4000_00 })
       this.txis.push(cuBudgetIncIx)
       const ix = await this.program.methods.mintProfileByAt(name, symbol, uri).accounts({
         profile,
@@ -379,12 +361,22 @@ export class Connectivity {
         userActivationTokenAta,
         activationTokenMetadata,
         collectionAuthorityRecord,
-        subCollectionAuthorityRecord,
+        // subCollectionAuthorityRecord,
+
+        //Profile minting cost distributaion account
+        userOposAta,
+        parentProfileVaultAta,
+        grandParentProfileVaultAta,
+        greatGrandParentProfileVaultAta,
+        ggreatGrandParentProfileVaultAta,
+        genesisProfileVaultAta,
       }).instruction()
       this.txis.push(ix)
 
-      const tx = new web3.Transaction().add(...this.txis,)
-      const signature = await this.provider.sendAndConfirm(tx, [mintKp]);
+      const tx = new web3.Transaction().add(...this.txis)
+
+      // const signature = await this.provider.sendAndConfirm(tx, [mintKp]);
+      const signature = await this.provider.sendAndConfirm(tx);
 
       return {
         Ok: { signature, info: { profile: profile.toBase58() } }
@@ -433,4 +425,94 @@ export class Connectivity {
       activationTokens,
     }
   }
+
+  async initSubscriptionBadge(input: { profile: web3.PublicKey | string, name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ subscriptionToken: string }>, any>> {
+    try {
+      const user = this.provider.publicKey;
+      this.reinit()
+      let { profile, name, symbol, uri } = input;
+      symbol = symbol ?? ""
+      uri = uri ?? ""
+
+      if (typeof profile == 'string') profile = new web3.PublicKey(profile)
+      const profileState = this.__getProfileStateAccount(profile)
+      const profileStateInfo = await this.program.account.profileState.fetch(profileState)
+      if (profileStateInfo.activationToken) return { Ok: { signature: "", info: { subscriptionToken: profileStateInfo.activationToken.toBase58() } } }
+      const profileMetadata = BaseMpl.getMetadataAccount(profile)
+      const profileEdition = BaseMpl.getEditionAccount(profile)
+      const profileCollectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(profile, this.mainState)
+      const { ata: userProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
+      const activationTokenKp = web3.Keypair.generate();
+      const activationToken = activationTokenKp.publicKey
+      const activationTokenMetadata = BaseMpl.getMetadataAccount(activationToken)
+      const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
+      const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
+
+      const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
+        profile,
+        mainState: this.mainState,
+        user,
+        associatedTokenProgram,
+        mplProgram,
+        profileState,
+        tokenProgram,
+        systemProgram,
+        profileEdition,
+        userProfileAta,
+        activationToken,
+        profileMetadata,
+        sysvarInstructions,
+        activationTokenState,
+        userActivationTokenAta,
+        activationTokenMetadata,
+        profileCollectionAuthorityRecord,
+      }).instruction()
+      this.txis.push(ix)
+
+      const tx = new web3.Transaction().add(...this.txis)
+      const signature = await this.provider.sendAndConfirm(tx, [activationTokenKp]);
+      return { Ok: { signature, info: { subscriptionToken: activationToken.toBase58() } } }
+    } catch (e) {
+      log({ error: e })
+      return { Err: e };
+    }
+  }
+
+  async mintSubscriptionToken(subscriptionToken: web3.PublicKey | string, receiver?: web3.PublicKey | string): Promise<Result<TxPassType<any>, any>> {
+    try {
+      this.reinit();
+      const user = this.provider.publicKey;
+      if (!user) throw "Wallet not found"
+      if (typeof subscriptionToken == 'string') subscriptionToken = new web3.PublicKey(subscriptionToken)
+      if (!receiver) receiver = user;
+      if (typeof receiver == 'string') receiver = new web3.PublicKey(receiver)
+      const { ata: receiverAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: subscriptionToken, owner: receiver }, this.ixCallBack)
+
+      const activationTokenState = this.__getActivationTokenStateAccount(subscriptionToken)
+      const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(activationTokenState)
+      const profile = activationTokenStateInfo.parentProfile
+      const profileState = this.__getProfileStateAccount(profile)
+      const { ata: minterProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
+      const ix = await this.program.methods.mintActivationToken(new BN(1)).accounts({
+        activationTokenState,
+        tokenProgram,
+        activationToken: subscriptionToken,
+        profile,
+        profileState,
+        minterProfileAta,
+        mainState: this.mainState,
+        minter: user,
+        receiverAta,
+      }).instruction()
+      this.txis.push(ix)
+
+      const tx = new web3.Transaction().add(...this.txis)
+      const signature = await this.provider.sendAndConfirm(tx)
+      return { Ok: { signature, info: {} } }
+    } catch (error) {
+      log({ error })
+      return { Err: error }
+    }
+  }
+
 }

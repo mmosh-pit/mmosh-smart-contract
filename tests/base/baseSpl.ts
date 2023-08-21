@@ -12,6 +12,8 @@ import {
 } from "@solana/spl-token";
 import { web3 } from "@project-serum/anchor";
 
+const log = console.log;
+
 export type createTokenOptions = {
   mintAuthority: web3.PublicKey;
   /** default (`mintAuthority`) */
@@ -38,19 +40,23 @@ export type getOrCreateTokenAccountOptons = {
   payer?: web3.PublicKey,
   /** default (`false`) */
   allowOffCurveOwner?: boolean;
+  checkCache?: boolean
 }
 
 
 export class BaseSpl {
   __connection: web3.Connection;
   __splIxs: web3.TransactionInstruction[] = [];
+  __cacheAta: Set<String>;
 
   constructor(connection: web3.Connection) {
     this.__connection = connection;
+    this.__cacheAta = new Set();
   }
 
   __reinit() {
     this.__splIxs = [];
+    this.__cacheAta = new Set();
   }
 
   async __getCreateTokenInstructions(opts: createTokenOptions = null) {
@@ -154,6 +160,7 @@ export class BaseSpl {
       mint,
       payer,
       allowOffCurveOwner,
+      checkCache
     } = input;
     allowOffCurveOwner = allowOffCurveOwner ?? false
     payer = payer ?? owner;
@@ -170,7 +177,14 @@ export class BaseSpl {
         mint
       );
       if (ixCallBack) {
-        ixCallBack([ix])
+        if (checkCache) {
+          if (!this.__cacheAta.has(ata.toBase58())) {
+            ixCallBack([ix])
+            this.__cacheAta.add(ata.toBase58())
+          } else log("already exist")
+        } else {
+          ixCallBack([ix])
+        }
       }
     }
 
