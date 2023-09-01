@@ -8,9 +8,6 @@ use crate::other_states::{MintingCostDistribution, TradingPriceDistribution};
 #[account]
 pub struct MainState {
     pub owner: Pubkey,
-    //It's genesis NFT(First GENESIS NFT)
-    // pub genesis_fake_id: Pubkey,
-    // pub activation_token_collection_id: Pubkey,
     pub opos_token: Pubkey,
     pub profile_minting_cost: u64,
     pub minting_cost_distribution: MintingCostDistribution,
@@ -18,9 +15,9 @@ pub struct MainState {
     pub seller_fee_basis_points: u16, //NOTE: may be later change
     pub _bump: u8,
     pub total_minted_profile: u64,
-
     pub profile_collection: Pubkey,
     pub genesis_profile: Pubkey,
+    pub common_lut: Pubkey,
 }
 
 impl MainState {

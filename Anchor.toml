@@ -1,16 +1,16 @@
 [features]
 seeds = false
 skip-lint = false
-[programs.localnet]
-# [programs.devnet]
+# [programs.localnet]
+[programs.devnet]
 sop = "7naVeywiE5AjY5SvwKyfRct9RQVqUTWNG36WhFu7JE6h"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
-# cluster = "devnet"
+# cluster = "Localnet"
+cluster = "devnet"
 wallet = "/home/vc/.config/solana/id.json"
 
 [scripts]

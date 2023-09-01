@@ -1,18 +1,24 @@
+use std::collections::HashMap;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Mint, Token, TokenAccount},
+    token::{self, Burn, Mint, MintTo, Token, TokenAccount},
 };
 use mpl_token_metadata::{
     instruction::{
         approve_collection_authority,
-        builders::{Burn, Create, Verify},
+        builders::{Create, Verify},
         verify_sized_collection_item, InstructionBuilder,
     },
     state::{
         AssetData, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED,
     },
     ID as MPL_ID,
+};
+use solana_address_lookup_table_program::{
+    instruction::{create_lookup_table, extend_lookup_table, freeze_lookup_table},
+    ID as ADDRESS_LOOKUP_TABLE_PROGRAM,
 };
 use solana_program::program::{invoke, invoke_signed};
 
@@ -26,41 +32,64 @@ use crate::{
     error::MyError,
     other_states::LineageInfo,
     profile_state::ProfileState,
-    utils::{_verify_collection, get_vault_pda, transfer_tokens, verify_collection_item_by_main},
+    utils::{
+        _verify_collection, get_vault_pda, init_ata_if_needed, transfer_tokens,
+        verify_collection_item_by_main,
+    },
 };
+
+#[derive(AnchorSerialize, AnchorDeserialize, Default, Clone)]
+pub struct MintProfileByAtInput {
+    pub name: String,
+    pub symbol: String,
+    // pub uri: String,
+    pub uri_hash: String,
+    pub recent_slot: u64,
+}
 
 ///MINT FakeID by activation_token
 pub fn mint_profile_by_at(
     ctx: Context<AMintProfileByAt>,
-    name: String,
-    symbol: String,
-    uri: String,
+    name: Box<String>,
+    symbol: Box<String>,
+    // uri: Box<String>,
+    uri_hash: Box<String>,
+    recent_slot: u64,
+    // MintProfileByAtInput {
+    //     name,
+    //     symbol,
+    //     uri,
+    //     recent_slot,
+    // }: MintProfileByAtInput,
 ) -> Result<()> {
+    let name = *name;
+    let symbol = *symbol;
+    let uri_hash = *uri_hash;
     {
         let user = ctx.accounts.user.to_account_info();
         let main_state = &mut ctx.accounts.main_state;
         let profile_state = &mut ctx.accounts.profile_state;
         let parent_profile_state = &mut ctx.accounts.parent_profile_state;
-        let parent_profile_metadata = ctx.accounts.parent_profile_metadata.to_account_info();
+        // let parent_profile_metadata = ctx.accounts.parent_profile_metadata.to_account_info();
         let token_program = ctx.accounts.token_program.to_account_info();
 
         //verification(parent nft collection check)
-        _verify_collection(&parent_profile_metadata, ctx.accounts.collection.key())?;
+        // _verify_collection(&parent_profile_metadata, ctx.accounts.collection.key())?;
 
         //state changes
+        profile_state.lut = ctx.accounts.new_lut.key();
         profile_state.mint = ctx.accounts.profile.key();
         profile_state.lineage.creator = ctx.accounts.user.key();
         profile_state.lineage.parent = parent_profile_state.mint;
         profile_state.lineage.grand_parent = parent_profile_state.lineage.parent;
         profile_state.lineage.great_grand_parent = parent_profile_state.lineage.grand_parent;
-        profile_state.lineage.ggreate_grand_parent =
-            parent_profile_state.lineage.ggreate_grand_parent;
+        profile_state.lineage.ggreat_grand_parent = parent_profile_state.lineage.great_grand_parent;
         profile_state.lineage.generation = parent_profile_state.lineage.generation + 1;
         parent_profile_state.lineage.total_child += 1;
     }
     {
         //NOTE: minting
-        ctx.accounts.mint(name, symbol, uri)?;
+        ctx.accounts.mint(name, symbol, uri_hash)?;
     }
     {
         //NOTE: created mint collection verifiaction
@@ -78,7 +107,9 @@ pub fn mint_profile_by_at(
         // Parent
         transfer_tokens(
             sender_ata.to_account_info(),
-            ctx.accounts.parent_profile_vault_ata.to_account_info(),
+            ctx.accounts
+                .parent_profile_holder_opos_ata
+                .to_account_info(),
             authority.to_account_info(),
             token_program.to_account_info(),
             (cost as u128 * minting_cost_distribution.parent as u128
@@ -89,7 +120,7 @@ pub fn mint_profile_by_at(
         transfer_tokens(
             sender_ata.to_account_info(),
             ctx.accounts
-                .grand_parent_profile_vault_ata
+                .grand_parent_profile_holder_opos_ata
                 .to_account_info(),
             authority.to_account_info(),
             token_program.to_account_info(),
@@ -101,7 +132,7 @@ pub fn mint_profile_by_at(
         transfer_tokens(
             sender_ata.to_account_info(),
             ctx.accounts
-                .great_grand_parent_profile_vault_ata
+                .great_grand_parent_profile_holder_opos_ata
                 .to_account_info(),
             authority.to_account_info(),
             token_program.to_account_info(),
@@ -113,7 +144,7 @@ pub fn mint_profile_by_at(
         transfer_tokens(
             sender_ata.to_account_info(),
             ctx.accounts
-                .ggreat_grand_parent_profile_vault_ata
+                .ggreat_grand_parent_profile_holder_opos_ata
                 .to_account_info(),
             authority.to_account_info(),
             token_program.to_account_info(),
@@ -124,25 +155,40 @@ pub fn mint_profile_by_at(
         // Genesis
         transfer_tokens(
             sender_ata.to_account_info(),
-            ctx.accounts.genesis_profile_vault_ata.to_account_info(),
+            ctx.accounts
+                .genesis_profile_holder_opos_ata
+                .to_account_info(),
             authority.to_account_info(),
             token_program.to_account_info(),
             (cost as u128 * minting_cost_distribution.genesis as u128
                 / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
         )?;
-
-        // ctx.accounts.approve_sub_collection_authority_to_main()?;
     }
     {
         ctx.accounts.burn_activation_token(ctx.program_id)?;
+    }
+    {
+        //NOTE: create lookup table
+        ctx.accounts.create_lookup_table(recent_slot)?;
     }
     Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(
+    name: Box<String>,
+    symbol: Box<String>,
+    uri: Box<String>,
+    recent_slot: u64,
+)]
 pub struct AMintProfileByAt<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+
+    ///CHECK:
+    #[account(address = main_state.opos_token)]
+    pub opos_token: AccountInfo<'info>,
+
     ///CHECK:
     #[account(
         mut,
@@ -154,14 +200,6 @@ pub struct AMintProfileByAt<'info> {
 
     #[account(
         mut,
-        token::mint = profile,
-        token::authority = user,
-        constraint = user_profile_ata.amount == 1,
-    )]
-    pub user_profile_ata: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        mut,
         seeds = [SEED_MAIN_STATE],
         bump,
     )]
@@ -170,29 +208,43 @@ pub struct AMintProfileByAt<'info> {
     #[account(mut)]
     pub activation_token: Box<Account<'info, Mint>>,
 
-    #[account(
-        mut,
-        seeds = [SEED_ACTIVATION_TOKEN_STATE,activation_token.key().as_ref()],
-        bump,
-    )]
-    pub activation_token_state: Box<Account<'info, ActivationTokenState>>,
-
+    // #[account(
+    //     mut,
+    //     seeds = [SEED_ACTIVATION_TOKEN_STATE,activation_token.key().as_ref()],
+    //     bump,
+    // )]
+    // pub activation_token_state: Box<Account<'info, ActivationTokenState>>,
+    //
+    // ///CHECK:
+    // #[account(
+    //     mut,
+    //     seeds=[
+    //         METADATA.as_ref(),
+    //         MPL_ID.as_ref(),
+    //         activation_token.key().as_ref(),
+    //     ],
+    //     bump,
+    //     seeds::program = MPL_ID
+    // )]
+    // pub activation_token_metadata: AccountInfo<'info>,
     ///CHECK:
     #[account(
-        mut,
-        seeds=[
-            METADATA.as_ref(),
-            MPL_ID.as_ref(),
-            activation_token.key().as_ref(),
-        ],
-        bump,
-        seeds::program = MPL_ID
+        init,
+        signer,
+        payer = user,
+        mint::decimals = 0,
+        mint::authority = user,
+        mint::freeze_authority = user,
     )]
-    pub activation_token_metadata: AccountInfo<'info>,
-
-    ///CHECK:
-    #[account(mut)]
     pub profile: Box<Account<'info, Mint>>,
+
+    #[account(
+        init,
+        payer = user,
+        associated_token::mint = profile,
+        associated_token::authority = user,
+    )]
+    pub user_profile_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -230,22 +282,21 @@ pub struct AMintProfileByAt<'info> {
     )]
     pub profile_edition: AccountInfo<'info>,
 
-    ///CHECK:
+    // ///CHECK:
+    // #[account(
+    //     mut,
+    //     seeds=[
+    //         METADATA.as_ref(),
+    //         MPL_ID.as_ref(),
+    //         activation_token_state.parent_profile.as_ref(),
+    //     ],
+    //     bump,
+    //     seeds::program = MPL_ID
+    // )]
+    // pub parent_profile_metadata: AccountInfo<'info>,
     #[account(
         mut,
-        seeds=[
-            METADATA.as_ref(),
-            MPL_ID.as_ref(),
-            activation_token_state.parent_profile.as_ref(),
-        ],
-        bump,
-        seeds::program = MPL_ID
-    )]
-    pub parent_profile_metadata: AccountInfo<'info>,
-
-    #[account(
-        mut,
-        seeds = [SEED_PROFILE_STATE, activation_token_state.parent_profile.as_ref()],
+        seeds = [SEED_PROFILE_STATE, parent_profile.key().as_ref()],
         bump,
     )]
     pub parent_profile_state: Box<Account<'info, ProfileState>>,
@@ -284,35 +335,16 @@ pub struct AMintProfileByAt<'info> {
     ///CHECK:
     #[account(
         mut,
-        seeds = [
-            METADATA.as_ref(),
-            MPL_ID.as_ref(),
-            collection.key().as_ref(),
-            COLLECTION_AUTHORITY.as_ref(),
-            main_state.key().as_ref(),
-        ],
-        bump,
-        seeds::program = MPL_ID
+        // seeds = [profile_state.key().as_ref(), recent_slot.to_le_bytes().as_ref()],
+        // bump,
+        // seeds::program = ADDRESS_LOOKUP_TABLE_PROGRAM,
     )]
-    pub collection_authority_record: AccountInfo<'info>,
+    pub new_lut: AccountInfo<'info>,
 
-    // ///CHECK:
-    // #[account(
-    //     mut,
-    //     seeds = [
-    //         METADATA.as_ref(),
-    //         MPL_ID.as_ref(),
-    //         profile.key().as_ref(),
-    //         COLLECTION_AUTHORITY.as_ref(),
-    //         main_state.key().as_ref(),
-    //     ],
-    //     bump,
-    //     seeds::program = MPL_ID
-    // )]
-    // pub sub_collection_authority_record: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = ADDRESS_LOOKUP_TABLE_PROGRAM)]
+    pub address_lookup_table_program: AccountInfo<'info>,
 
-    //PERF: not sure parent profile nft collection verification are require or not (think it
-    //already secure)
     ///CHECK:
     #[account()]
     pub sysvar_instructions: AccountInfo<'info>,
@@ -322,99 +354,233 @@ pub struct AMintProfileByAt<'info> {
     pub mpl_program: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-
     pub system_program: Program<'info, System>,
+
     //NOTE: profile minting cost distribution account
+    // #[account(address = activation_token_state.parent_profile @ MyError::ProfileIdMissMatch)]
+    pub parent_profile: Box<Account<'info, Mint>>,
+    pub grand_parent_profile: Box<Account<'info, Mint>>,
+    pub great_grand_parent_profile: Box<Account<'info, Mint>>,
+    pub ggreate_grand_parent_profile: Box<Account<'info, Mint>>,
+    pub genesis_profile: Box<Account<'info, Mint>>,
+
+    // Current parent profile holded ata
+    #[account(
+        token::mint = parent_profile_state.mint,
+        constraint = current_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.parent,
+        constraint = current_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.grand_parent,
+        constraint = current_great_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_great_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.great_grand_parent,
+        constraint = current_ggreat_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_ggreat_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = main_state.genesis_profile,
+        constraint = current_genesis_profile_holder_ata.amount == 1
+    )]
+    pub current_genesis_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+
+    // Current profile holders
+    ///CHECK:
+    #[account(address = current_parent_profile_holder_ata.owner)]
+    pub current_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_grand_parent_profile_holder_ata.owner)]
+    pub current_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_great_grand_parent_profile_holder_ata.owner)]
+    pub current_great_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_ggreat_grand_parent_profile_holder_ata.owner)]
+    pub current_ggreat_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_genesis_profile_holder_ata.owner)]
+    pub current_genesis_profile_holder: AccountInfo<'info>,
+
+    // Current Profile holder's opos token ata
     #[account(
         mut,
-        token::mint = main_state.opos_token,
+        token::mint = opos_token,
         token::authority = user,
         constraint= user_opos_ata.amount >= main_state.profile_minting_cost @ MyError::NotEnoughTokenToMint
     )]
     pub user_opos_ata: Box<Account<'info, TokenAccount>>,
+    ///CHECK:
     #[account(
         mut,
-        token::mint = main_state.opos_token,
-        token::authority = get_vault_pda(&parent_profile_state.mint).0
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            parent_profile_holder_opos_ata.to_account_info(),
+            current_parent_profile_holder.to_account_info(),
+            user.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_parent_profile_holder,
     )]
-    pub parent_profile_vault_ata: Box<Account<'info, TokenAccount>>,
+    // pub parent_profile_holder_opos_ata: Box<Account<'info, TokenAccount>>,
+    pub parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
     #[account(
         mut,
-        token::mint = main_state.opos_token,
-        token::authority = get_vault_pda(&parent_profile_state.lineage.parent).0
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_grand_parent_profile_holder.to_account_info(),
+            user.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_grand_parent_profile_holder,
     )]
-    pub grand_parent_profile_vault_ata: Box<Account<'info, TokenAccount>>,
+    pub grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
     #[account(
         mut,
-        token::mint = main_state.opos_token,
-        token::authority = get_vault_pda(&parent_profile_state.lineage.grand_parent).0
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            great_grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_great_grand_parent_profile_holder.to_account_info(),
+            user.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_great_grand_parent_profile_holder,
     )]
-    pub great_grand_parent_profile_vault_ata: Box<Account<'info, TokenAccount>>,
+    pub great_grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
     #[account(
         mut,
-        token::mint = main_state.opos_token,
-        token::authority = get_vault_pda(&parent_profile_state.lineage.great_grand_parent).0
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            ggreat_grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_ggreat_grand_parent_profile_holder.to_account_info(),
+            user.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_ggreat_grand_parent_profile_holder,
     )]
-    pub ggreat_grand_parent_profile_vault_ata: Box<Account<'info, TokenAccount>>,
+    pub ggreat_grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
     #[account(
         mut,
-        token::mint = main_state.opos_token,
-        token::authority = main_state.genesis_profile,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            genesis_profile_holder_opos_ata.to_account_info(),
+            current_genesis_profile_holder.to_account_info(),
+            user.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_genesis_profile_holder,
     )]
-    pub genesis_profile_vault_ata: Box<Account<'info, TokenAccount>>,
+    pub genesis_profile_holder_opos_ata: AccountInfo<'info>,
 }
 
 impl<'info> AMintProfileByAt<'info> {
-    pub fn mint(&mut self, name: String, symbol: String, uri: String) -> Result<()> {
+    pub fn mint(&mut self, name: String, symbol: String, uri_hash: String) -> Result<()> {
         let mint = self.profile.to_account_info();
         let user = self.user.to_account_info();
         let user_profile_ata = self.user_profile_ata.to_account_info();
+        // let user_profile_ata = self.user_profile_ata.to_account_info();
         let system_program = self.system_program.to_account_info();
         let token_program = self.token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.profile_metadata.to_account_info();
         let edition = self.profile_edition.to_account_info();
-        let associated_token_program = self.associated_token_program.to_account_info();
+        // let associated_token_program = self.associated_token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
+        //mint a token
+        let cpi_acounts = MintTo {
+            mint: mint.to_account_info(),
+            to: user_profile_ata,
+            authority: user.to_account_info(),
+        };
+        token::mint_to(
+            CpiContext::new(token_program.to_account_info(), cpi_acounts),
+            1,
+        )?;
+
         // Creators Setup for royalty
         let trading_price_distribution = main_state.trading_price_distribution;
         let seller_fee_basis_points = TOTAL_SELLER_BASIS_POINTS - trading_price_distribution.seller;
-        let creators = Some(vec![
+        let creators = vec![
             //NOTE: currently not royalty info for creator
             Creator {
                 address: user.key(),
                 verified: false,
                 share: 0,
             },
-            //
             Creator {
-                address: self.parent_profile_vault_ata.owner,
+                address: get_vault_pda(&self.profile_state.lineage.parent).0,
                 verified: false,
                 share: (trading_price_distribution.parent as u64 * 100u64
                     / seller_fee_basis_points as u64) as u8,
             },
             Creator {
-                address: self.grand_parent_profile_vault_ata.owner,
+                address: get_vault_pda(&self.profile_state.lineage.grand_parent).0,
                 verified: false,
                 share: (trading_price_distribution.grand_parent as u64 * 100u64
                     / seller_fee_basis_points as u64) as u8,
             },
             Creator {
-                address: self.great_grand_parent_profile_vault_ata.owner,
+                address: get_vault_pda(&self.profile_state.lineage.great_grand_parent).0,
                 verified: false,
                 share: (trading_price_distribution.great_grand_parent as u64 * 100u64
                     / seller_fee_basis_points as u64) as u8,
             },
             Creator {
-                address: self.genesis_profile_vault_ata.owner,
+                address: get_vault_pda(&main_state.genesis_profile).0,
                 verified: false,
                 share: (trading_price_distribution.genesis as u64 * 100u64
                     / seller_fee_basis_points as u64) as u8,
             },
-        ]);
+        ];
+
+        let mut unique_creators = HashMap::<Pubkey, Creator>::new();
+        for creator in creators.into_iter() {
+            let res = unique_creators.get_mut(&creator.address);
+            if let Some(value) = res {
+                value.share += creator.share;
+            } else {
+                unique_creators.insert(creator.address, creator);
+            }
+        }
+
+        let creators = Some(
+            unique_creators
+                .into_iter()
+                .map(|(k, v)| v)
+                .collect::<Vec<_>>(),
+        );
+
+        let entryPoint = "https://gateway.pinata.cloud/ipfs/";
+        let uri = format!("{}{}", entryPoint, uri_hash);
 
         let asset_data = AssetData {
             name,
@@ -426,11 +592,12 @@ impl<'info> AMintProfileByAt<'info> {
             }),
             uses: None,
             creators,
+            // creators: None,
             collection_details: Some(mpl_token_metadata::state::CollectionDetails::V1 { size: 0 }),
             is_mutable: true, //NOTE: may be for testing
             rule_set: None,
             token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
-            primary_sale_happened: false,
+            primary_sale_happened: true,
             seller_fee_basis_points, //EX: 20% (80% goes to seller)
         };
 
@@ -459,12 +626,12 @@ impl<'info> AMintProfileByAt<'info> {
             &[
                 mint,
                 user,
-                user_profile_ata,
+                // user_profile_ata,
                 main_state.to_account_info(),
                 metadata,
                 edition,
                 mpl_program,
-                associated_token_program,
+                // associated_token_program,
                 token_program,
                 system_program,
                 sysvar_instructions,
@@ -505,7 +672,7 @@ impl<'info> AMintProfileByAt<'info> {
         let collection = self.collection.to_account_info();
         let collection_edition = self.collection_edition.to_account_info();
         let collection_metadata = self.collection_metadata.to_account_info();
-        let collection_authority_record = self.collection_authority_record.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
         let system_program = self.system_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
@@ -514,7 +681,7 @@ impl<'info> AMintProfileByAt<'info> {
             collection,
             collection_metadata,
             collection_edition,
-            collection_authority_record,
+            // collection_authority_record,
             main_state,
             mpl_program,
             system_program,
@@ -530,47 +697,16 @@ impl<'info> AMintProfileByAt<'info> {
         let user_activation_token_ata = self.user_activation_token_ata.to_account_info();
         let system_program = self.system_program.to_account_info();
         let token_program = self.token_program.to_account_info();
-        let associated_token_program = self.associated_token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
-        let metadata = self.activation_token_metadata.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
-        // let main_state = &mut self.main_state;
 
-        let ix = Burn {
-            mint: mint.key(),
-            metadata: metadata.key(),
-            token: user_activation_token_ata.key(),
-            authority: user.key(),
-            spl_token_program: token_program.key(),
-            system_program: system_program.key(),
-            sysvar_instructions: sysvar_instructions.key(),
-            collection_metadata: None,
-            edition: None,
-            master_edition: None,
-            token_record: None,
-            edition_marker: None,
-            master_edition_mint: None,
-            master_edition_token: None,
-            args: mpl_token_metadata::instruction::BurnArgs::V1 { amount: 1 },
-        }
-        .instruction();
+        let cpi_accounts = Burn {
+            mint,
+            from: user_activation_token_ata,
+            authority: user,
+        };
 
-        invoke(
-            &ix,
-            &[
-                mint,
-                user,
-                user_activation_token_ata,
-                system_program,
-                token_program,
-                mpl_program,
-                associated_token_program,
-                metadata,
-                sysvar_instructions,
-            ],
-            // &[&[SEED_MAIN_STATE, &[self.main_state._bump]]],
-        )?;
-
+        token::burn(CpiContext::new(token_program, cpi_accounts), 1)?;
         Ok(())
     }
 
@@ -607,26 +743,26 @@ impl<'info> AMintProfileByAt<'info> {
             ],
             &[
                 &[SEED_MAIN_STATE, &[self.main_state._bump]],
-                &[
-                    SEED_VAULT,
-                    self.parent_profile_vault_ata.owner.as_ref(),
-                    [get_vault_pda(&self.parent_profile_vault_ata.owner).1].as_ref(),
-                ],
-                &[
-                    SEED_VAULT,
-                    self.grand_parent_profile_vault_ata.owner.as_ref(),
-                    [get_vault_pda(&self.grand_parent_profile_vault_ata.owner).1].as_ref(),
-                ],
-                &[
-                    SEED_VAULT,
-                    self.great_grand_parent_profile_vault_ata.owner.as_ref(),
-                    [get_vault_pda(&self.great_grand_parent_profile_vault_ata.owner).1].as_ref(),
-                ],
-                &[
-                    SEED_VAULT,
-                    self.genesis_profile_vault_ata.owner.as_ref(),
-                    [get_vault_pda(&self.genesis_profile_vault_ata.owner).1].as_ref(),
-                ],
+                // &[
+                //     SEED_VAULT,
+                //     self.parent_profile_vault_ata.owner.as_ref(),
+                //     [get_vault_pda(&self.parent_profile_vault_ata.owner).1].as_ref(),
+                // ],
+                // &[
+                //     SEED_VAULT,
+                //     self.grand_parent_profile_vault_ata.owner.as_ref(),
+                //     [get_vault_pda(&self.grand_parent_profile_vault_ata.owner).1].as_ref(),
+                // ],
+                // &[
+                //     SEED_VAULT,
+                //     self.great_grand_parent_profile_vault_ata.owner.as_ref(),
+                //     [get_vault_pda(&self.great_grand_parent_profile_vault_ata.owner).1].as_ref(),
+                // ],
+                // &[
+                //     SEED_VAULT,
+                //     self.genesis_profile_vault_ata.owner.as_ref(),
+                //     [get_vault_pda(&self.genesis_profile_vault_ata.owner).1].as_ref(),
+                // ],
             ],
         )?;
 
@@ -669,6 +805,76 @@ impl<'info> AMintProfileByAt<'info> {
         //     ],
         //     &[&[SEED_MAIN_STATE, &[main_state._bump]]],
         // )?;
+        Ok(())
+    }
+
+    pub fn create_lookup_table(&mut self, recent_slot: u64) -> Result<()> {
+        let user = self.user.to_account_info();
+        let authority = self.profile_state.to_account_info();
+        let address_lookup_table_program = self.address_lookup_table_program.to_account_info();
+        let system_program = self.system_program.to_account_info();
+
+        let sft = self.activation_token.to_account_info();
+        let profile = self.profile.to_account_info();
+        let profile_state = self.profile_state.to_account_info();
+        let parent_profile = self.parent_profile.to_account_info();
+        let grand_parent_profile = self.grand_parent_profile.to_account_info();
+        let great_grand_parent_profile = self.great_grand_parent_profile.to_account_info();
+        // let ggreat_grand_parent_profile = self.ggreate_grand_parent_profile.to_account_info();
+
+        let new_lut = self.new_lut.to_account_info();
+        let (_, bump) =
+            Pubkey::find_program_address(&[SEED_PROFILE_STATE, profile.key().as_ref()], &crate::ID);
+
+        let (create_ix, _lut_id) = create_lookup_table(authority.key(), user.key(), recent_slot);
+        invoke_signed(
+            &create_ix,
+            &[
+                new_lut.to_account_info(),
+                authority.to_account_info(),
+                user.to_account_info(),
+                address_lookup_table_program.to_account_info(),
+                system_program.to_account_info(),
+            ],
+            &[&[SEED_PROFILE_STATE, profile.key().as_ref(), &[bump]]],
+        )?;
+
+        let extand_ix = extend_lookup_table(
+            new_lut.key(),
+            authority.key(),
+            Some(user.key()),
+            vec![
+                sft.key(),
+                authority.key(), // profile state
+                profile.key(),
+                parent_profile.key(),
+                grand_parent_profile.key(),
+                great_grand_parent_profile.key(),
+            ],
+        );
+        invoke_signed(
+            &extand_ix,
+            &[
+                new_lut.to_account_info(),
+                authority.to_account_info(),
+                user.to_account_info(),
+                address_lookup_table_program.to_account_info(),
+                system_program.to_account_info(),
+            ],
+            &[&[SEED_PROFILE_STATE, profile.key().as_ref(), &[bump]]],
+        )?;
+
+        let freez_ix = freeze_lookup_table(new_lut.key(), authority.key());
+        invoke_signed(
+            &freez_ix,
+            &[
+                new_lut.to_account_info(),
+                authority.to_account_info(),
+                address_lookup_table_program.to_account_info(),
+            ],
+            &[&[SEED_PROFILE_STATE, profile.key().as_ref(), &[bump]]],
+        )?;
+
         Ok(())
     }
 }

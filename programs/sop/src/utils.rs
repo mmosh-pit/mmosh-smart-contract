@@ -4,7 +4,11 @@ use crate::{
     error::MyError,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, Transfer};
+use anchor_spl::token::{
+    self, initialize_account, Token, Transfer,
+};
+use anchor_spl::associated_token::{create as create_ata, Create as CreateAta};
+
 use mpl_token_metadata::{
     instruction::{builders::Verify, verify_sized_collection_item, InstructionBuilder},
     state::{Metadata, TokenMetadataAccount},
@@ -55,7 +59,7 @@ pub fn verify_collection_item_by_main<'info>(
     collection: AccountInfo<'info>,
     collection_metadata: AccountInfo<'info>,
     collection_edition: AccountInfo<'info>,
-    collection_authority_record: AccountInfo<'info>,
+    // collection_authority_record: AccountInfo<'info>,
     main_state: &Account<'info, MainState>,
     mpl_program: AccountInfo<'info>,
     system_program: AccountInfo<'info>,
@@ -69,7 +73,8 @@ pub fn verify_collection_item_by_main<'info>(
         collection_master_edition: Some(collection_edition.key()),
         system_program: system_program.key(),
         sysvar_instructions: sysvar_instructions.key(),
-        delegate_record: Some(collection_authority_record.key()),
+        // delegate_record: Some(collection_authority_record.key()),
+        delegate_record: None,
         args: mpl_token_metadata::instruction::VerificationArgs::CollectionV1,
     }
     .instruction();
@@ -84,7 +89,7 @@ pub fn verify_collection_item_by_main<'info>(
             collection_edition,
             mpl_program,
             system_program,
-            collection_authority_record,
+            // collection_authority_record,
             sysvar_instructions,
         ],
         &[&[SEED_MAIN_STATE, &[main_state._bump]]],
@@ -108,4 +113,30 @@ pub fn _verify_collection(metadata_account: &AccountInfo, collection_id: Pubkey)
         return Ok(());
     }
     anchor_lang::err!(MyError::UnknownNft)
+}
+
+pub fn init_ata_if_needed<'info>(
+    mint: AccountInfo<'info>,
+    ata: AccountInfo<'info>,
+    authority: AccountInfo<'info>,
+    payer: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
+    system_program: AccountInfo<'info>,
+    associated_token_program: AccountInfo<'info>,
+) -> Result<()> {
+    if *ata.owner == token::ID {
+        return Ok(());
+    }
+
+    let cpi_accounts = CreateAta{
+        associated_token: ata,
+        mint,
+        authority,
+        payer,
+        token_program,
+        system_program,
+    };
+
+    create_ata(CpiContext::new(associated_token_program,cpi_accounts))?;
+    Ok(())
 }

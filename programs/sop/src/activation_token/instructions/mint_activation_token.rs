@@ -26,6 +26,8 @@ pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) ->
     let activation_token_state = &mut ctx.accounts.activation_token_state;
     let main_state = &mut ctx.accounts.main_state;
     let token_program = ctx.accounts.token_program.to_account_info();
+    let profile_state = &mut ctx.accounts.profile_state;
+    profile_state.total_minted_sft += amount;
 
     let cpi_accounts = MintTo {
         mint,
@@ -56,7 +58,7 @@ pub struct AMintActivationToken<'info> {
         mut,
         token::mint = profile,
         token::authority = minter,
-        constraint = minter_profile_ata.amount == 1,
+        constraint = minter_profile_ata.amount == 1 @ MyError::OnlyProfileHolderAllow,
     )]
     pub minter_profile_ata: Box<Account<'info, TokenAccount>>,
 

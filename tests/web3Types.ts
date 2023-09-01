@@ -18,23 +18,32 @@ export type MintProfileByAdminInput = IdlTypes<Sop>[typeof mintProfileByAdminInp
 
 //EXTRA (Out of IDL)
 export type Result<T, E> = {
-    Ok?: T;
-    Err?: E;
+  Ok?: T;
+  Err?: E;
 };
 export type TxPassType<Info> = { signature: string, info?: Info };
 
 export type _MintProfileInput = {
-    name?: string,
-    symbol?: string,
-    uri?: string,
-    parentProfile: string | web3.PublicKey
+  name?: string,
+  symbol?: string,
+  uri?: string,
+  parentProfile: string | web3.PublicKey
 }
 
 export type _MintProfileByAtInput = {
-    name: string,
-    symbol?: string,
-    uri?: string,
-    activationToken: string | web3.PublicKey
-    genesisProfile: string | web3.PublicKey
+  name: string,
+  symbol?: string,
+  // uri?: string,
+  uriHash?: string,
+  activationToken: string | web3.PublicKey
+  genesisProfile: string | web3.PublicKey
+  commonLut: string | web3.PublicKey
+}
+
+export type _MintSubscriptionToken = {
+  parentProfile?: web3.PublicKey | string,
+  subscriptionToken?: web3.PublicKey | string,
+  receiver?: web3.PublicKey | string,
+  amount?: number
 }
 

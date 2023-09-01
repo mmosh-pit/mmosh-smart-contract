@@ -43,6 +43,32 @@ export type getOrCreateTokenAccountOptons = {
   checkCache?: boolean
 }
 
+export type TranferTokenInputs = {
+  sender: web3.PublicKey,
+  receiver: web3.PublicKey,
+  mint: web3.PublicKey,
+  /** default (`1`) */
+  amount?: number,
+  /** default (`false`) */
+  allowOffCurveOwner?: boolean
+  /** default (`false`) */
+  init_if_needed?: boolean,
+  /** default (`sender`) */
+  payer?: web3.PublicKey
+}
+
+export type MintToken = {
+  mint: web3.PublicKey,
+  authority: web3.PublicKey,
+  /** default (`authority`) */
+  payer?: web3.PublicKey,
+  /** default (`authority`) */
+  receiver?: web3.PublicKey,
+  /** default (`1`) */
+  amount?: number,
+  /** default (`0`) */
+  decimal?: number
+}
 
 export class BaseSpl {
   __connection: web3.Connection;
@@ -166,7 +192,7 @@ export class BaseSpl {
     payer = payer ?? owner;
 
     const ata = getAssociatedTokenAddressSync(mint, owner, allowOffCurveOwner);
-    let ix = null;
+    let ix: web3.TransactionInstruction = null;
     const info = await this.__connection.getAccountInfo(ata);
 
     if (!info) {
@@ -192,5 +218,67 @@ export class BaseSpl {
       ata,
       ix,
     };
+  }
+
+  async transfer_token(input: TranferTokenInputs, ixCallBack?: (ixs?: web3.TransactionInstruction[]) => void) {
+    this.__reinit();
+    let {
+      mint,
+      sender,
+      receiver,
+      amount,
+      payer,
+      init_if_needed,
+      allowOffCurveOwner,
+    } = input;
+    amount = amount ?? 1;
+    payer = payer ?? sender
+    init_if_needed = init_if_needed ?? false
+    allowOffCurveOwner = allowOffCurveOwner ?? false
+    let senderAta: web3.PublicKey = getAssociatedTokenAddressSync(mint, sender)
+    let receiverAta: web3.PublicKey = getAssociatedTokenAddressSync(mint, receiver, allowOffCurveOwner)
+
+    let ixs: web3.TransactionInstruction[] = []
+    if (init_if_needed) {
+      const { ix: initIx } = await this.__getOrCreateTokenAccountInstruction({ mint, allowOffCurveOwner, payer, owner: receiver, checkCache: true })
+      ixs.push(initIx)
+    }
+    const transferIx = createTransferInstruction(senderAta, receiverAta, sender, amount);
+    ixs.push(transferIx)
+    if (ixCallBack) ixCallBack(ixs)
+
+    return ixs
+  }
+
+  async mintToken(input: MintToken, ixCallBack?: (ixs?: web3.TransactionInstruction[]) => void) {
+    this.__reinit();
+    let {
+      mint,
+      authority,
+      payer,
+      receiver,
+      amount,
+      decimal,
+    } = input;
+    payer = payer ?? authority;
+    receiver = receiver ?? authority
+    amount = amount ?? 1
+    decimal = decimal ?? 0
+    if (decimal != 0) {
+      amount = Math.trunc(Math.pow(10, decimal) * amount)
+    }
+
+    const { ata, ix: initAtaIx } = await this.__getOrCreateTokenAccountInstruction({ payer, mint, owner: receiver })
+    if (initAtaIx) this.__splIxs.push(initAtaIx)
+
+    const ix = createMintToInstruction(
+      mint,
+      ata,
+      authority,
+      amount
+    );
+    this.__splIxs.push(ix)
+
+    return { ixs: this.__splIxs }
   }
 }

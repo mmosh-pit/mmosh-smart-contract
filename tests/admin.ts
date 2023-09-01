@@ -29,6 +29,10 @@ const {
 } = web3Consts;
 const log = console.log;
 
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class Connectivity {
   programId: web3.PublicKey;
   provider: AnchorProvider;
@@ -317,7 +321,7 @@ export class Connectivity {
     }
   }
 
-  async initActivationToken(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
+  async initActivationToken(input: { name?: string, symbol?: string, uri?: string, amount?: number }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
     try {
       const user = this.provider.publicKey;
       this.reinit();
@@ -347,10 +351,11 @@ export class Connectivity {
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
-      let { name, symbol, uri } = input;
+      let { name, symbol, uri, amount } = input;
+      amount = amount ?? 1
       symbol = symbol ?? ""
       uri = uri ?? ""
-      const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
+      const ix = await this.program.methods.initActivationToken(name, symbol, uri, new BN(amount)).accounts({
         profile,
         mainState: this.mainState,
         user,
@@ -380,7 +385,7 @@ export class Connectivity {
     }
   }
 
-  async mintActivationToken(receiver?: web3.PublicKey | string): Promise<Result<TxPassType<any>, any>> {
+  async mintActivationToken(amount: number, receiver?: web3.PublicKey | string,): Promise<Result<TxPassType<any>, any>> {
     try {
       this.reinit();
       const user = this.provider.publicKey;
@@ -404,7 +409,7 @@ export class Connectivity {
       // const profileState = this.__getProfileStateAccount(profile)
       const { ata: minterProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
 
-      const ix = await this.program.methods.mintActivationToken(new BN(1)).accounts({
+      const ix = await this.program.methods.mintActivationToken(new BN(amount)).accounts({
         activationTokenState,
         tokenProgram,
         activationToken,
@@ -425,32 +430,52 @@ export class Connectivity {
     }
   }
 
-  // async setMembershipCollection(collection: string | web3.PublicKey): Promise<Result<TxPassType<any>, any>> {
-  //   try {
-  //     if (typeof collection == 'string') collection = new web3.PublicKey(collection)
-  //     const signature = await this.program.methods.setMembershipCollection(collection).accounts({ owner: this.provider.publicKey, mainState: this.mainState }).rpc();
-  //     return {
-  //       Ok: { signature }
-  //     }
-  //   } catch (e) {
-  //     log({ error: e })
-  //     return { Err: e };
-  //   }
-  // }
+  async setupLookupTable(addresses: web3.PublicKey[] = []): Promise<Result<TxPassType<{ lookupTable: string }>, any>> {
+    try {
+      const slot = await this.connection.getSlot();
+      const [lookupTableInst, lookupTableAddress] =
+        web3.AddressLookupTableProgram.createLookupTable({
+          authority: this.provider.publicKey,
+          payer: this.provider.publicKey,
+          recentSlot: slot - 1,
+        });
 
-  // async setBrandCollection(collection: string | web3.PublicKey): Promise<Result<TxPassType<any>, any>> {
-  //   try {
-  //     if (typeof collection == 'string') collection = new web3.PublicKey(collection)
-  //     const signature = await this.program.methods.setBrandCollection(collection).accounts({ owner: this.provider.publicKey, mainState: this.mainState }).rpc();
-  //     return {
-  //       Ok: { signature }
-  //     }
-  //   } catch (e) {
-  //     log({ error: e })
-  //     return { Err: e };
-  //   }
-  // }
+      const extendInstruction = web3.AddressLookupTableProgram.extendLookupTable({
+        payer: this.provider.publicKey,
+        authority: this.provider.publicKey,
+        lookupTable: lookupTableAddress,
+        addresses,
+      });
+      const freezeInstruction = web3.AddressLookupTableProgram.freezeLookupTable({
+        lookupTable: lookupTableAddress, // The address of the lookup table to freeze
+        authority: this.provider.publicKey, // The authority (i.e., the account with permission to modify the lookup table)
+      });
 
+      const transaction = new web3.Transaction().add(lookupTableInst, extendInstruction, freezeInstruction)
+      const signature = await this.provider.sendAndConfirm(transaction as any);
+      return { Ok: { signature, info: { lookupTable: lookupTableAddress.toBase58() } } }
+    } catch (err) {
+      log("Error: ", err)
+      return { Err: err }
+    }
+  }
+
+  async setCommonLut(lut: web3.PublicKey | string): Promise<Result<TxPassType<any>, any>> {
+    try {
+      if (typeof lut == 'string') lut = new web3.PublicKey(lut)
+      const signature = await this.program.methods.setCommonLut(lut).accounts({
+        owner: this.provider.publicKey,
+        mainState: this.mainState,
+      }).rpc();
+
+      return {
+        Ok: { signature }
+      }
+    } catch (error) {
+      log("setCommonLut Error: ", error)
+      return { Err: error }
+    }
+  }
 
   async getMainStateInfo() {
     const res = await this.program.account.mainState.fetch(this.mainState);

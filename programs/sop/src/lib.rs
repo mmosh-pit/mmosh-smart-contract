@@ -6,6 +6,7 @@ pub mod _main;
 pub mod activation_token;
 pub mod collection_factory;
 pub mod fake_id;
+pub mod offer;
 pub mod profile;
 
 pub mod constants;
@@ -17,6 +18,7 @@ use _main::*;
 use activation_token::*;
 use collection_factory::*;
 use fake_id::*;
+use offer::*;
 use other_states::LineageInfo;
 use profile::*;
 
@@ -43,25 +45,14 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn reset_main(ctx: Context<AResetMain>) -> Result<()> {
+    pub fn set_common_lut(ctx: Context<AUpdateMainState>, lut: Pubkey) -> Result<()> {
+        ctx.accounts.main_state.common_lut = lut;
         Ok(())
     }
 
-    // pub fn set_membership_collection(
-    //     ctx: Context<ASetNativeCollection>,
-    //     collection: Pubkey,
-    // ) -> Result<()> {
-    //     ctx.accounts.main_state.profile_collection = collection;
-    //     Ok(())
-    // }
-    //
-    // pub fn set_brand_collection(
-    //     ctx: Context<ASetNativeCollection>,
-    //     collection: Pubkey,
-    // ) -> Result<()> {
-    //     ctx.accounts.main_state.brand_collection = collection;
-    //     Ok(())
-    // }
+    pub fn reset_main(ctx: Context<AResetMain>) -> Result<()> {
+        Ok(())
+    }
 
     pub fn create_profile_collection(
         ctx: Context<ACreateCollection>,
@@ -82,23 +73,15 @@ pub mod sop {
     }
 
     //User calls
-    // pub fn mint_(
-    //     ctx: Context<AMintProfile>,
-    //     name: String,
-    //     symbol: String,
-    //     uri: String,
-    // ) -> Result<()> {
-    //     profile::mint_profile(ctx, name, symbol, uri)?;
-    //     Ok(())
-    // }
-
     pub fn mint_profile_by_at(
         ctx: Context<AMintProfileByAt>,
-        name: String,
-        symbol: String,
-        uri: String,
+        name: Box<String>,
+        symbol: Box<String>,
+        // uri: Box<String>,
+        uri_hash: Box<String>,
+        recent_slot: u64,
     ) -> Result<()> {
-        profile::mint_profile_by_at(ctx, name, symbol, uri)?;
+        profile::mint_profile_by_at(ctx, name, symbol, uri_hash, recent_slot)?;
         Ok(())
     }
 
@@ -107,13 +90,24 @@ pub mod sop {
         name: String,
         symbol: String,
         uri: String,
+        amount: u64,
     ) -> Result<()> {
-        activation_token::init_activation_token(ctx, name, symbol, uri)?;
+        activation_token::init_activation_token(ctx, name, symbol, uri, amount)?;
         Ok(())
     }
 
     pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) -> Result<()> {
         activation_token::mint_activation_token(ctx, amount)?;
+        Ok(())
+    }
+
+    pub fn mint_offer(
+        ctx: Context<AMintOffer>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        offer::mint_offer(ctx, name, symbol, uri)?;
         Ok(())
     }
 }

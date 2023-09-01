@@ -4,7 +4,6 @@ use crate::{_main::main_state::{MainState, MainStateInput}, constants::SEED_MAIN
 pub fn update_main_state(ctx: Context<AUpdateMainState>, input: MainStateInput ) -> Result<()> {
     let main_state= &mut ctx.accounts.main_state;
     input.set_value(main_state);
-
     Ok(())
 }
 

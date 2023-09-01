@@ -31,4 +31,7 @@ pub enum MyError {
 
     #[msg("Not have enough token to mint")]
     NotEnoughTokenToMint,
+
+    #[msg("Profile ID missmatch")]
+    ProfileIdMissMatch,
 }

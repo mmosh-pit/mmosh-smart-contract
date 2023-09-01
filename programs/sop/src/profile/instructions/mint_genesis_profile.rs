@@ -48,22 +48,30 @@ pub fn mint_genesis_profile(
         let collection_state = &mut ctx.accounts.collection_state;
 
         //verification
-
-        //state changes
-        profile_state.mint = ctx.accounts.profile.key();
-        profile_state.lineage.creator = ctx.accounts.admin.key();
-        profile_state.lineage.parent = input.parent_mint;
-        profile_state.lineage.grand_parent = input.lineage.parent;
-        profile_state.lineage.great_grand_parent = input.lineage.grand_parent;
-        profile_state.lineage.ggreate_grand_parent = input.lineage.ggreate_grand_parent;
-        // profile_state.lineage.generation = input.lineage.generation;
-        // profile_state.lineage.total_child = input.lineage.total_child;
-        profile_state.lineage.generation = 0;
-        profile_state.lineage.total_child = 0;
-
         if collection_state.genesis_profile != System::id() {
             return anchor_lang::err!(MyError::AlreadySet);
         }
+
+        //state changes
+        let profile = ctx.accounts.profile.key();
+        profile_state.mint = profile;
+        profile_state.lineage.creator = ctx.accounts.admin.key();
+        profile_state.lineage.parent = profile;
+        profile_state.lineage.grand_parent = profile;
+        profile_state.lineage.great_grand_parent = profile;
+        profile_state.lineage.ggreat_grand_parent = profile;
+
+        // profile_state.mint = ctx.accounts.profile.key();
+        // profile_state.lineage.creator = ctx.accounts.admin.key();
+        // profile_state.lineage.parent = input.parent_mint;
+        // profile_state.lineage.grand_parent = input.lineage.parent;
+        // profile_state.lineage.great_grand_parent = input.lineage.grand_parent;
+        // profile_state.lineage.ggreat_grand_parent = input.lineage.ggreat_grand_parent;
+        // profile_state.lineage.generation = input.lineage.generation;
+        // profile_state.lineage.total_child = input.lineage.total_child;
+        profile_state.lineage.generation = 1;
+        profile_state.lineage.total_child = 0;
+
         collection_state.genesis_profile = ctx.accounts.profile.key();
 
         //TODO: update some main state if fiels are avaible (may be in future)
@@ -327,7 +335,7 @@ impl<'info> AMintProfileByAdmin<'info> {
         let collection = self.collection.to_account_info();
         let collection_metadata = self.collection_metadata.to_account_info();
         let collection_edition = self.collection_edition.to_account_info();
-        let collection_authority_record = self.collection_authority_record.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
         verify_collection_item_by_main(
@@ -335,7 +343,7 @@ impl<'info> AMintProfileByAdmin<'info> {
             collection,
             collection_metadata,
             collection_edition,
-            collection_authority_record,
+            // collection_authority_record,
             main_state,
             mpl_program,
             system_program,
