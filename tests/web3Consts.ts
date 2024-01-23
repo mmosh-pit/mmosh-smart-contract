@@ -9,7 +9,7 @@ export const web3Consts = {
   mplProgram: new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
   associatedTokenProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
   addressLookupTableProgram: web3.AddressLookupTableProgram.programId,
-  oposToken: new web3.PublicKey("6mkLT37zjtHWKy33wYqn7fewViVhGXZsCVpMVyeZ1LJt"),
+  oposToken: new web3.PublicKey("4inBzE3LkKrJmJsdhkoXc85ZfiXb6dsgDPk2ffkgZDd2"),
   LAMPORTS_PER_OPOS: 1000_000,
   Seeds: {
     mainState: utf8.encode("main_state4"),

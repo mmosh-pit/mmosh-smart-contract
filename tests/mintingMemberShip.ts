@@ -29,6 +29,8 @@ describe("sop", () => {
   const connection = provider.connection;
   const program = anchor.workspace.Sop as Program<Sop>;
   const programId = program.programId;
+
+  console.log("prgram id ", programId.toBase58())
   const owner = provider.publicKey;
   const adConn = new AdConn(provider, program.programId);
   const userConn = new UserConn(provider, programId);
@@ -62,11 +64,11 @@ describe("sop", () => {
         genesis: 100 * 10,
       }
     })
-    // log({ res })
+    log({ res })
     // if (res?.Err) throw "initialise mainstate failed"
     assert(res?.Ok, "initialise mainstate failed")
   });
-  return;
+
 
   let profileCollection: web3.PublicKey = null
   it("creating profile Collections", async () => {
@@ -190,7 +192,7 @@ describe("sop", () => {
     // log({ signature: res.Ok.signature })
     assert(res.Ok, "Failed to mint activation Token")
   })
-  return;
+
 
   /// USER: SIDE
   let userProfile: web3.PublicKey = null
@@ -210,6 +212,8 @@ describe("sop", () => {
     userProfile = new web3.PublicKey(res.Ok.info.profile)
   })
 
+
+
   let subscriptionToken: string = null
   it("Initialise Subscription Token", async () => {
     const res = await userConn.initSubscriptionBadge({
@@ -221,7 +225,7 @@ describe("sop", () => {
     log({ signature: res.Ok.signature, subscriptionToken: res.Ok.info.subscriptionToken })
     subscriptionToken = res.Ok.info.subscriptionToken
   })
-  return;
+
 
   it("Mint Subscription Token", async () => {
     const res = await userConn.mintSubscriptionToken({ subscriptionToken: subscriptionToken });
@@ -308,15 +312,15 @@ describe("sop", () => {
     log({ res: JSON.stringify(res) })
     const child = new web3.PublicKey(res.Ok.info.profile)
 
-    // log({
-    //   lineage: {
-    //     parent: parent.toBase58(),
-    //     grandParent: grandParent.toBase58(),
-    //     greatGrandPanre: greatGrandParent.toBase58(),
-    //     ggreatGrandParent: ggreateGrandParent.toBase58(),
-    //     genesisProfile: genesisProfile.toBase58()
-    //   }
-    // })
+    log({
+      lineage: {
+        parent: parent.toBase58(),
+        grandParent: grandParent.toBase58(),
+        greatGrandPanre: greatGrandParent.toBase58(),
+        ggreatGrandParent: ggreateGrandParent.toBase58(),
+        genesisProfile: genesisProfile.toBase58()
+      }
+    })
   })
 
 })

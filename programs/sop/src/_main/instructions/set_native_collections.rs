@@ -1,10 +1,14 @@
+use crate::{
+    _main::main_state::{MainState, MainStateInput},
+    constants::SEED_MAIN_STATE,
+    error::MyError,
+};
 use anchor_lang::prelude::*;
-use crate::{_main::main_state::{MainState, MainStateInput}, constants::SEED_MAIN_STATE, error::MyError};
 
 #[derive(Accounts)]
-pub struct ASetNativeCollection<'info>{
+pub struct ASetNativeCollection<'info> {
     #[account(
-        mut, 
+        mut,
         address = main_state.owner @ MyError::OnlyOwnerCanCall,
     )]
     pub owner: Signer<'info>,
@@ -15,4 +19,4 @@ pub struct ASetNativeCollection<'info>{
         bump,
     )]
     pub main_state: Account<'info, MainState>,
-} 
+}

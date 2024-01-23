@@ -4,10 +4,8 @@ use crate::{
     error::MyError,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    self, initialize_account, Token, Transfer,
-};
 use anchor_spl::associated_token::{create as create_ata, Create as CreateAta};
+use anchor_spl::token::{self, initialize_account, Token, Transfer};
 
 use mpl_token_metadata::{
     instruction::{builders::Verify, verify_sized_collection_item, InstructionBuilder},
@@ -102,13 +100,13 @@ pub fn get_vault_pda(profile_mint: &Pubkey) -> (Pubkey, u8) {
     let res = Pubkey::find_program_address(&[SEED_VAULT, profile_mint.as_ref()], &crate::ID);
     // let sign_seed = [SEED_VAULT, profile_mint.as_ref(), &[res.1]].as_ref();
 
-    return res;
+    res
 }
 
 pub fn _verify_collection(metadata_account: &AccountInfo, collection_id: Pubkey) -> Result<()> {
     let metadata =
         Metadata::from_account_info(metadata_account).map_err(|_| MyError::UnknownNft)?;
-    let collection_info = metadata.collection.ok_or_else(|| MyError::UnknownNft)?;
+    let collection_info = metadata.collection.ok_or(MyError::UnknownNft)?;
     if collection_info.key == collection_id && collection_info.verified {
         return Ok(());
     }
@@ -128,7 +126,7 @@ pub fn init_ata_if_needed<'info>(
         return Ok(());
     }
 
-    let cpi_accounts = CreateAta{
+    let cpi_accounts = CreateAta {
         associated_token: ata,
         mint,
         authority,
@@ -137,6 +135,6 @@ pub fn init_ata_if_needed<'info>(
         system_program,
     };
 
-    create_ata(CpiContext::new(associated_token_program,cpi_accounts))?;
+    create_ata(CpiContext::new(associated_token_program, cpi_accounts))?;
     Ok(())
 }

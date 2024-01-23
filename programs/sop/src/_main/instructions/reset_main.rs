@@ -1,18 +1,22 @@
+use crate::{
+    _main::main_state::{MainState, MainStateInput},
+    constants::SEED_MAIN_STATE,
+    error::MyError,
+};
 use anchor_lang::prelude::*;
-use crate::{_main::main_state::{MainState, MainStateInput}, constants::SEED_MAIN_STATE, error::MyError};
 
 // pub fn reset_main(ctx:Context<AResetMain>)->Result<()>{
 //     Ok(())
 // }
 
 #[derive(Accounts)]
-pub struct AResetMain<'info>{
+pub struct AResetMain<'info> {
     #[account(
-        mut, 
+        mut,
         address = main_state.owner @ MyError::OnlyOwnerCanCall,
     )]
     pub owner: Signer<'info>,
-    
+
     #[account(
         mut,
         close = owner,
@@ -21,5 +25,5 @@ pub struct AResetMain<'info>{
     )]
     pub main_state: Account<'info, MainState>,
 
-    pub system_program:Program<'info,System>,
+    pub system_program: Program<'info, System>,
 }

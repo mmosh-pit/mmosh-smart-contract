@@ -23,7 +23,7 @@ export async function __mintOposToken(provider: AnchorProvider) {
   if (mintInfo) return { txSignature: "", mint: usdcMint };
   const tokenAmount = 10_000_000_000;
 
-  const dataStr = fs.readFileSync('./tests/_accounts/opos_coin.json', { encoding: "utf8" })
+  const dataStr = fs.readFileSync('./tests/_accounts/id.json', { encoding: "utf8" })
   const mintSecretKey = Uint8Array.from(JSON.parse(dataStr))
   const mintKp = web3.Keypair.fromSecretKey(mintSecretKey)
   const spl = new BaseSpl(provider.connection)
