@@ -26,6 +26,8 @@
     <pre>amman start .ammanrc.js</pre>
 
 ## Test Case Command
+1. Install npm
+   <pre>npm install </pre>
 1. To run test with deployment 
    <pre>anchor test --skip-local-validator </pre>
 2. To run test without deployment
