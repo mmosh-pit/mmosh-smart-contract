@@ -1,17 +1,17 @@
 [features]
 seeds = false
 skip-lint = false
-# [programs.localnet]
-[programs.devnet]
-sop = "7naVeywiE5AjY5SvwKyfRct9RQVqUTWNG36WhFu7JE6h"
+
+[programs.localnet]
+sop = "62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF"
 
 [registry]
 url = "https://api.apr.dev"
 
+
 [provider]
-# cluster = "Localnet"
-cluster = "devnet"
-wallet = "/home/vc/.config/solana/id.json"
+cluster = "Localnet"
+wallet = "/Users/jeyakumar/.config/solana/id.json"
 
 [scripts]
 # test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/sop.ts"

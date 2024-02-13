@@ -1,6 +1,6 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("7naVeywiE5AjY5SvwKyfRct9RQVqUTWNG36WhFu7JE6h");
+declare_id!("62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF");
 
 pub mod _main;
 pub mod activation_token;
@@ -89,10 +89,9 @@ pub mod sop {
         ctx: Context<AInitActivationToken>,
         name: String,
         symbol: String,
-        uri: String,
-        amount: u64,
+        uri: String
     ) -> Result<()> {
-        activation_token::init_activation_token(ctx, name, symbol, uri, amount)?;
+        activation_token::init_activation_token(ctx, name, symbol, uri)?;
         Ok(())
     }
 

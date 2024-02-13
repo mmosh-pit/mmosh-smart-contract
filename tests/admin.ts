@@ -13,7 +13,7 @@ import {
   TxPassType,
 } from "./web3Types";
 import Config from "./web3Config.json";
-import { getAssociatedTokenAddressSync, getNonTransferable } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getNonTransferable, unpackAccount } from "@solana/spl-token";
 import { BaseMpl } from "./base/baseMpl";
 import { web3Consts } from './web3Consts'
 import { BaseSpl } from "./base/baseSpl";
@@ -25,7 +25,7 @@ const {
   tokenProgram,
   sysvarInstructions,
   Seeds,
-  oposToken: usdcMint
+  oposToken
 } = web3Consts;
 const log = console.log;
 
@@ -321,7 +321,9 @@ export class Connectivity {
     }
   }
 
-  async initActivationToken(input: { name?: string, symbol?: string, uri?: string, amount?: number }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
+  return
+
+  async initActivationToken(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ activationToken: string }>, any>> {
     try {
       const user = this.provider.publicKey;
       this.reinit();
@@ -351,11 +353,10 @@ export class Connectivity {
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
-      let { name, symbol, uri, amount } = input;
-      amount = amount ?? 1
+      let { name, symbol, uri } = input;
       symbol = symbol ?? ""
       uri = uri ?? ""
-      const ix = await this.program.methods.initActivationToken(name, symbol, uri, new BN(amount)).accounts({
+      const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
         profile,
         mainState: this.mainState,
         user,
@@ -409,6 +410,40 @@ export class Connectivity {
       // const profileState = this.__getProfileStateAccount(profile)
       const { ata: minterProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: profile, owner: user }, this.ixCallBack)
 
+      const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(activationTokenState)
+      const parentProfile = activationTokenStateInfo.parentProfile;
+      const parentProfileState = this.__getProfileStateAccount(parentProfile);
+      const parentProfileStateInfo = await this.program.account.profileState.fetch(this.__getProfileStateAccount(parentProfile))
+
+      const {
+        //profiles
+        // genesisProfile,
+        // parentProfile,
+        grandParentProfile,
+        greatGrandParentProfile,
+        ggreateGrandParentProfile,
+        //
+        currentGreatGrandParentProfileHolder,
+        currentGgreatGrandParentProfileHolder,
+        currentGrandParentProfileHolder,
+        currentGenesisProfileHolder,
+        currentParentProfileHolder,
+        //
+        currentParentProfileHolderAta,
+        currentGenesisProfileHolderAta,
+        currentGrandParentProfileHolderAta,
+        currentGreatGrandParentProfileHolderAta,
+        currentGgreatGrandParentProfileHolderAta,
+        //
+        parentProfileHolderOposAta,
+        genesisProfileHolderOposAta,
+        grandParentProfileHolderOposAta,
+        greatGrandParentProfileHolderOposAta,
+        ggreatGrandParentProfileHolderOposAta,
+      } = await this.__getProfileHoldersInfo(parentProfileStateInfo.lineage, parentProfile, profile)
+
+      const userOposAta = getAssociatedTokenAddressSync(oposToken, user)
+      
       const ix = await this.program.methods.mintActivationToken(new BN(amount)).accounts({
         activationTokenState,
         tokenProgram,
@@ -419,6 +454,39 @@ export class Connectivity {
         mainState: this.mainState,
         minter: user,
         receiverAta,
+        //NOTE: Profile minting cost distributaion account
+        oposToken,
+        systemProgram,
+        associatedTokenProgram,
+        userOposAta,
+        parentProfileState,
+
+        //Profiles
+        parentProfile,
+        genesisProfile: profile,
+        grandParentProfile,
+        greatGrandParentProfile,
+        ggreateGrandParentProfile,
+
+        //verification ata
+        currentParentProfileHolderAta,
+        currentGrandParentProfileHolderAta,
+        currentGreatGrandParentProfileHolderAta,
+        currentGgreatGrandParentProfileHolderAta,
+        currentGenesisProfileHolderAta,
+        // profile owners
+        currentParentProfileHolder,
+        currentGrandParentProfileHolder,
+        currentGreatGrandParentProfileHolder,
+        currentGgreatGrandParentProfileHolder,
+        currentGenesisProfileHolder,
+
+        // holder opos ata
+        parentProfileHolderOposAta,
+        grandParentProfileHolderOposAta,
+        greatGrandParentProfileHolderOposAta,
+        ggreatGrandParentProfileHolderOposAta,
+        genesisProfileHolderOposAta,
       }).instruction()
       this.txis.push(ix)
       const tx = new web3.Transaction().add(...this.txis)
@@ -481,4 +549,86 @@ export class Connectivity {
     const res = await this.program.account.mainState.fetch(this.mainState);
     return res;
   }
+
+  async __getProfileHoldersInfo(input: LineageInfo, parentProfile: web3.PublicKey, genesisProfile: web3.PublicKey): Promise<{
+    //profiles:
+    parentProfile: web3.PublicKey,
+    grandParentProfile: web3.PublicKey,
+    greatGrandParentProfile: web3.PublicKey,
+    ggreateGrandParentProfile: web3.PublicKey,
+    genesisProfile: web3.PublicKey,
+    //Profile holder ata
+    currentParentProfileHolderAta: web3.PublicKey,
+    currentGrandParentProfileHolderAta: web3.PublicKey,
+    currentGreatGrandParentProfileHolderAta: web3.PublicKey,
+    currentGgreatGrandParentProfileHolderAta: web3.PublicKey,
+    currentGenesisProfileHolderAta: web3.PublicKey,
+    // profile owners
+    currentParentProfileHolder: web3.PublicKey,
+    currentGrandParentProfileHolder: web3.PublicKey,
+    currentGreatGrandParentProfileHolder: web3.PublicKey,
+    currentGgreatGrandParentProfileHolder: web3.PublicKey,
+    currentGenesisProfileHolder: web3.PublicKey,
+    // opos accounts
+    parentProfileHolderOposAta: web3.PublicKey,
+    grandParentProfileHolderOposAta: web3.PublicKey,
+    greatGrandParentProfileHolderOposAta: web3.PublicKey,
+    ggreatGrandParentProfileHolderOposAta: web3.PublicKey,
+    genesisProfileHolderOposAta: web3.PublicKey,
+  }> {
+    const grandParentProfile = input.parent
+    const greatGrandParentProfile = input.grandParent;
+    const ggreateGrandParentProfile = input.greatGrandParent;
+
+    const currentParentProfileHolderAta = (await this.connection.getTokenLargestAccounts(parentProfile)).value[0].address
+    const currentGrandParentProfileHolderAta = (await this.connection.getTokenLargestAccounts(grandParentProfile)).value[0].address
+    const currentGreatGrandParentProfileHolderAta = (await this.connection.getTokenLargestAccounts(greatGrandParentProfile)).value[0].address
+    const currentGgreatGrandParentProfileHolderAta = (await this.connection.getTokenLargestAccounts(ggreateGrandParentProfile)).value[0].address
+    const currentGenesisProfileHolderAta = (await this.connection.getTokenLargestAccounts(genesisProfile)).value[0].address
+
+    const atasInfo = await this.connection.getMultipleAccountsInfo([
+      currentParentProfileHolderAta,
+      currentGrandParentProfileHolderAta,
+      currentGreatGrandParentProfileHolderAta,
+      currentGgreatGrandParentProfileHolderAta,
+      currentGenesisProfileHolderAta
+    ])
+
+    const currentParentProfileHolder = unpackAccount(currentParentProfileHolderAta, atasInfo[0]).owner
+    const currentGrandParentProfileHolder = unpackAccount(currentGrandParentProfileHolderAta, atasInfo[1]).owner
+    const currentGreatGrandParentProfileHolder = unpackAccount(currentGreatGrandParentProfileHolderAta, atasInfo[2]).owner
+    const currentGgreatGrandParentProfileHolder = unpackAccount(currentGgreatGrandParentProfileHolderAta, atasInfo[3]).owner
+    const currentGenesisProfileHolder = unpackAccount(currentGenesisProfileHolderAta, atasInfo[4]).owner
+
+    return {
+      //profiles:
+      parentProfile,
+      grandParentProfile,
+      greatGrandParentProfile,
+      ggreateGrandParentProfile,
+      genesisProfile,
+      // profile holder profile ata
+      currentParentProfileHolderAta,
+      currentGrandParentProfileHolderAta,
+      currentGreatGrandParentProfileHolderAta,
+      currentGgreatGrandParentProfileHolderAta,
+      currentGenesisProfileHolderAta,
+
+      // profile holders
+      currentParentProfileHolder,
+      currentGrandParentProfileHolder,
+      currentGreatGrandParentProfileHolder,
+      currentGgreatGrandParentProfileHolder,
+      currentGenesisProfileHolder,
+
+      // profile holder oposAta
+      parentProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentParentProfileHolder),
+      grandParentProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentGrandParentProfileHolder),
+      greatGrandParentProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentGreatGrandParentProfileHolder),
+      ggreatGrandParentProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentGgreatGrandParentProfileHolder),
+      genesisProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentGenesisProfileHolder),
+    }
+  }
 }
+
+

@@ -13,11 +13,11 @@ use solana_program::program::{invoke, invoke_signed};
 use crate::{
     _main::MainState,
     activation_token::ActivationTokenState,
-    constants::{SEED_ACTIVATION_TOKEN_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE},
+    constants::{SEED_ACTIVATION_TOKEN_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE, TOTAL_SELLER_BASIS_POINTS},
     error::MyError,
     other_states::LineageInfo,
     profile::profile_state::ProfileState,
-    utils::_verify_collection,
+    utils::{_verify_collection,init_ata_if_needed, transfer_tokens},
 };
 
 pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) -> Result<()> {
@@ -43,6 +43,75 @@ pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) ->
         ),
         amount,
     )?;
+
+    // NOTE: minting cost distribution
+    let token_program = ctx.accounts.token_program.to_account_info();
+    let sender_ata = ctx.accounts.user_opos_ata.to_account_info();
+    let authority = ctx.accounts.minter.to_account_info();
+    let main_state = &mut ctx.accounts.main_state;
+    let cost = main_state.invitation_minting_cost;
+    let minting_cost_distribution = main_state.minting_cost_distribution;
+
+    // Parent
+    transfer_tokens(
+        sender_ata.to_account_info(),
+        ctx.accounts
+            .parent_profile_holder_opos_ata
+            .to_account_info(),
+        authority.to_account_info(),
+        token_program.to_account_info(),
+        (cost as u128 * minting_cost_distribution.parent as u128
+            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+    )?;
+
+    // Grand Parent
+    transfer_tokens(
+        sender_ata.to_account_info(),
+        ctx.accounts
+            .grand_parent_profile_holder_opos_ata
+            .to_account_info(),
+        authority.to_account_info(),
+        token_program.to_account_info(),
+        (cost as u128 * minting_cost_distribution.grand_parent as u128
+            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+    )?;
+
+    // Great Grand Parent
+    transfer_tokens(
+        sender_ata.to_account_info(),
+        ctx.accounts
+            .great_grand_parent_profile_holder_opos_ata
+            .to_account_info(),
+        authority.to_account_info(),
+        token_program.to_account_info(),
+        (cost as u128 * minting_cost_distribution.great_grand_parent as u128
+            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+    )?;
+
+    // Great Great Grand Parent
+    transfer_tokens(
+        sender_ata.to_account_info(),
+        ctx.accounts
+            .ggreat_grand_parent_profile_holder_opos_ata
+            .to_account_info(),
+        authority.to_account_info(),
+        token_program.to_account_info(),
+        (cost as u128 * minting_cost_distribution.ggreat_grand_parent as u128
+            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+    )?;
+
+    // Genesis
+    transfer_tokens(
+        sender_ata.to_account_info(),
+        ctx.accounts
+            .genesis_profile_holder_opos_ata
+            .to_account_info(),
+        authority.to_account_info(),
+        token_program.to_account_info(),
+        (cost as u128 * minting_cost_distribution.genesis as u128
+            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+    )?;
+    
     Ok(())
 }
 
@@ -99,4 +168,159 @@ pub struct AMintActivationToken<'info> {
     )]
     pub profile_state: Box<Account<'info, ProfileState>>,
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+
+    //NOTE: profile minting cost distribution account
+    // #[account(address = activation_token_state.parent_profile @ MyError::ProfileIdMissMatch)]
+    pub parent_profile: Box<Account<'info, Mint>>,
+    pub grand_parent_profile: Box<Account<'info, Mint>>,
+    pub great_grand_parent_profile: Box<Account<'info, Mint>>,
+    pub ggreate_grand_parent_profile: Box<Account<'info, Mint>>,
+    pub genesis_profile: Box<Account<'info, Mint>>,
+
+    #[account(
+        mut,
+        seeds = [SEED_PROFILE_STATE, parent_profile.key().as_ref()],
+        bump,
+    )]
+    pub parent_profile_state: Box<Account<'info, ProfileState>>,
+
+    ///CHECK:
+    #[account(address = main_state.opos_token)]
+    pub opos_token: AccountInfo<'info>,
+
+    // Current parent profile holded ata
+    #[account(
+        token::mint = parent_profile_state.mint,
+        constraint = current_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.parent,
+        constraint = current_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.grand_parent,
+        constraint = current_great_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_great_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = parent_profile_state.lineage.great_grand_parent,
+        constraint = current_ggreat_grand_parent_profile_holder_ata.amount == 1
+    )]
+    pub current_ggreat_grand_parent_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        token::mint = main_state.genesis_profile,
+        constraint = current_genesis_profile_holder_ata.amount == 1
+    )]
+    pub current_genesis_profile_holder_ata: Box<Account<'info, TokenAccount>>,
+
+    // Current profile holders
+    ///CHECK:
+    #[account(address = current_parent_profile_holder_ata.owner)]
+    pub current_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_grand_parent_profile_holder_ata.owner)]
+    pub current_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_great_grand_parent_profile_holder_ata.owner)]
+    pub current_great_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_ggreat_grand_parent_profile_holder_ata.owner)]
+    pub current_ggreat_grand_parent_profile_holder: AccountInfo<'info>,
+    ///CHECK:
+    #[account(address = current_genesis_profile_holder_ata.owner)]
+    pub current_genesis_profile_holder: AccountInfo<'info>,
+
+    // Current Profile holder's opos token ata
+    #[account(
+        mut,
+        token::mint = opos_token,
+        token::authority = minter,
+        constraint= user_opos_ata.amount >= main_state.invitation_minting_cost @ MyError::NotEnoughTokenToMint
+    )]
+    pub user_opos_ata: Box<Account<'info, TokenAccount>>,
+    ///CHECK:
+    #[account(
+        mut,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            parent_profile_holder_opos_ata.to_account_info(),
+            current_parent_profile_holder.to_account_info(),
+            minter.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_parent_profile_holder,
+    )]
+    // pub parent_profile_holder_opos_ata: Box<Account<'info, TokenAccount>>,
+    pub parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
+    #[account(
+        mut,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_grand_parent_profile_holder.to_account_info(),
+            minter.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_grand_parent_profile_holder,
+    )]
+    pub grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
+    #[account(
+        mut,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            great_grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_great_grand_parent_profile_holder.to_account_info(),
+            minter.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_great_grand_parent_profile_holder,
+    )]
+    pub great_grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
+    #[account(
+        mut,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            ggreat_grand_parent_profile_holder_opos_ata.to_account_info(),
+            current_ggreat_grand_parent_profile_holder.to_account_info(),
+            minter.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_ggreat_grand_parent_profile_holder,
+    )]
+    pub ggreat_grand_parent_profile_holder_opos_ata: AccountInfo<'info>,
+    ///CHECK:
+    #[account(
+        mut,
+        constraint = init_ata_if_needed(
+            opos_token.to_account_info(),
+            genesis_profile_holder_opos_ata.to_account_info(),
+            current_genesis_profile_holder.to_account_info(),
+            minter.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            associated_token_program.to_account_info(),
+        ) == Ok(())
+        // token::mint = opos_token,
+        // token::authority = current_genesis_profile_holder,
+    )]
+    pub genesis_profile_holder_opos_ata: AccountInfo<'info>,
 }

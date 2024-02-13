@@ -4,7 +4,7 @@ use crate::{
 };
 use anchor_lang::{prelude::*, Discriminator};
 
-pub fn init_main_state(ctx: Context<AInitMainState>,input: MainStateInput) -> Result<()> {
+pub fn init_main_state(ctx: Context<AInitMainState>, input: MainStateInput) -> Result<()> {
     let main_state = &mut ctx.accounts.main_state;
     let owner = ctx.accounts.owner.to_account_info();
     input.set_value(main_state);
@@ -18,7 +18,7 @@ pub fn init_main_state(ctx: Context<AInitMainState>,input: MainStateInput) -> Re
 pub struct AInitMainState<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    
+
     #[account(
         init,
         payer = owner,

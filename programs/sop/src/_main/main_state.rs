@@ -10,6 +10,7 @@ pub struct MainState {
     pub owner: Pubkey,
     pub opos_token: Pubkey,
     pub profile_minting_cost: u64,
+    pub invitation_minting_cost: u64,
     pub minting_cost_distribution: MintingCostDistribution,
     pub trading_price_distribution: TradingPriceDistribution,
     pub seller_fee_basis_points: u16, //NOTE: may be later change
@@ -29,13 +30,13 @@ impl MainState {
     //     Ok(())
     // }
 
-    pub fn verify_activation_token<'info>(
+    pub fn verify_activation_token(
         &self,
-        metadata_account_info: &'info AccountInfo,
+        metadata_account_info: &AccountInfo,
     ) -> Result<()> {
         let metadata =
             Metadata::from_account_info(metadata_account_info).map_err(|_| MyError::UnknownNft)?;
-        let collection_info = metadata.collection.ok_or_else(|| MyError::UnknownNft)?;
+        let collection_info = metadata.collection.ok_or(MyError::UnknownNft)?;
         // require!(
         //     collection_info.key == self.activation_token_collection_id && collection_info.verified,
         //     MyError::UnknownNft
@@ -47,6 +48,7 @@ impl MainState {
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy)]
 pub struct MainStateInput {
     pub profile_minting_cost: u64,
+    pub invitation_minting_cost: u64,
     pub opos_token: Pubkey,
     pub minting_cost_distribution: MintingCostDistribution,
     pub trading_price_distribution: TradingPriceDistribution,
@@ -60,5 +62,6 @@ impl MainStateInput {
         state.minting_cost_distribution = self.minting_cost_distribution;
         state.trading_price_distribution = self.trading_price_distribution;
         state.profile_minting_cost = self.profile_minting_cost;
+        state.invitation_minting_cost = self.invitation_minting_cost;
     }
 }

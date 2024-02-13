@@ -256,9 +256,9 @@ export class Connectivity {
       tx.sign([mintKp])
       this.txis = []
       tx.sign([mintKp])
-      const signedTx = await this.provider.wallet.signTransaction(tx as any)
-      const txLen = signedTx.serialize().length
-      log({ txLen, luts: lutsInfo.length })
+      // const signedTx = await this.provider.wallet.signTransaction(tx as any)
+      // const txLen = signedTx.serialize().length
+      // log({ txLen, luts: lutsInfo.length })
       const signature = await this.provider.sendAndConfirm(tx as any)
 
       return {
@@ -272,12 +272,11 @@ export class Connectivity {
     }
   }
 
-  async initSubscriptionBadge(input: { profile: web3.PublicKey | string, name?: string, symbol?: string, uri?: string, amount?: number }): Promise<Result<TxPassType<{ subscriptionToken: string }>, any>> {
+  async initSubscriptionBadge(input: { profile: web3.PublicKey | string, name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ subscriptionToken: string }>, any>> {
     try {
       const user = this.provider.publicKey;
       this.reinit()
-      let { profile, name, symbol, uri, amount } = input;
-      amount = amount ?? 1
+      let { profile, name, symbol, uri } = input;
       symbol = symbol ?? ""
       uri = uri ?? ""
 
@@ -295,7 +294,7 @@ export class Connectivity {
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
-      const ix = await this.program.methods.initActivationToken(name, symbol, uri, new BN(amount)).accounts({
+      const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
         profile,
         mainState: this.mainState,
         user,
@@ -343,16 +342,19 @@ export class Connectivity {
       if (!subscriptionToken) {
         if (!parentProfile) throw "Parent Profile not found"
         if (typeof parentProfile == 'string') parentProfile = new web3.PublicKey(parentProfile)
-        const parentProfileStateInfo = await this.program.account.profileState.fetch(this.__getProfileStateAccount(parentProfile))
-        subscriptionToken = parentProfileStateInfo.activationToken;
+        const parentProfileStateInfoData = await this.program.account.profileState.fetch(this.__getProfileStateAccount(parentProfile))
+        subscriptionToken = parentProfileStateInfoData.activationToken;
         if (!subscriptionToken) throw "Subscription Token not initialised"
         subscriptionTokenState = this.__getActivationTokenStateAccount(subscriptionToken)
       } else {
         if (typeof subscriptionToken == 'string') subscriptionToken = new web3.PublicKey(subscriptionToken)
         subscriptionTokenState = this.__getActivationTokenStateAccount(subscriptionToken)
-        const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(subscriptionTokenState)
-        parentProfile = activationTokenStateInfo.parentProfile;
       }
+
+      const activationTokenStateInfo = await this.program.account.activationTokenState.fetch(subscriptionTokenState)
+      parentProfile = activationTokenStateInfo.parentProfile;
+      const parentProfileState = this.__getProfileStateAccount(parentProfile);
+      let parentProfileStateInfo = await this.program.account.profileState.fetch(parentProfileState)
 
       if (!receiver) receiver = user;
       if (typeof receiver == 'string') receiver = new web3.PublicKey(receiver)
@@ -361,6 +363,40 @@ export class Connectivity {
       // const profile = activationTokenStateInfo.parentProfile
       const profileState = this.__getProfileStateAccount(parentProfile)
       const { ata: minterProfileAta } = await this.baseSpl.__getOrCreateTokenAccountInstruction({ mint: parentProfile, owner: user }, this.ixCallBack)
+
+      const mainStateInfo = await this.program.account.mainState.fetch(this.mainState)
+      const profileCollection = mainStateInfo.profileCollection;
+      const profileCollectionState = await this.program.account.collectionState.fetch(this.__getCollectionStateAccount(profileCollection))
+      const genesisProfile = profileCollectionState.genesisProfile;
+      const {
+        //profiles
+        // genesisProfile,
+        // parentProfile,
+        grandParentProfile,
+        greatGrandParentProfile,
+        ggreateGrandParentProfile,
+        //
+        currentGreatGrandParentProfileHolder,
+        currentGgreatGrandParentProfileHolder,
+        currentGrandParentProfileHolder,
+        currentGenesisProfileHolder,
+        currentParentProfileHolder,
+        //
+        currentParentProfileHolderAta,
+        currentGenesisProfileHolderAta,
+        currentGrandParentProfileHolderAta,
+        currentGreatGrandParentProfileHolderAta,
+        currentGgreatGrandParentProfileHolderAta,
+        //
+        parentProfileHolderOposAta,
+        genesisProfileHolderOposAta,
+        grandParentProfileHolderOposAta,
+        greatGrandParentProfileHolderOposAta,
+        ggreatGrandParentProfileHolderOposAta,
+      } = await this.__getProfileHoldersInfo(parentProfileStateInfo.lineage, parentProfile, genesisProfile)
+
+      const userOposAta = getAssociatedTokenAddressSync(oposToken, user)
+
       const ix = await this.program.methods.mintActivationToken(new BN(amount)).accounts({
         activationTokenState: subscriptionTokenState,
         tokenProgram,
@@ -371,6 +407,39 @@ export class Connectivity {
         mainState: this.mainState,
         minter: user,
         receiverAta,
+         //NOTE: Profile minting cost distributaion account
+         oposToken,
+         systemProgram,
+         associatedTokenProgram,
+         userOposAta,
+         parentProfileState,
+ 
+         //Profiles
+         parentProfile,
+         genesisProfile,
+         grandParentProfile,
+         greatGrandParentProfile,
+         ggreateGrandParentProfile,
+ 
+         //verification ata
+         currentParentProfileHolderAta,
+         currentGrandParentProfileHolderAta,
+         currentGreatGrandParentProfileHolderAta,
+         currentGgreatGrandParentProfileHolderAta,
+         currentGenesisProfileHolderAta,
+         // profile owners
+         currentParentProfileHolder,
+         currentGrandParentProfileHolder,
+         currentGreatGrandParentProfileHolder,
+         currentGgreatGrandParentProfileHolder,
+         currentGenesisProfileHolder,
+ 
+         // holder opos ata
+         parentProfileHolderOposAta,
+         grandParentProfileHolderOposAta,
+         greatGrandParentProfileHolderOposAta,
+         ggreatGrandParentProfileHolderOposAta,
+         genesisProfileHolderOposAta,
       }).instruction()
       this.txis.push(ix)
 
