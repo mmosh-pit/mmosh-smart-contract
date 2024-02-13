@@ -9,8 +9,8 @@ export const web3Consts = {
   mplProgram: new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
   associatedTokenProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
   addressLookupTableProgram: web3.AddressLookupTableProgram.programId,
-  oposToken: new web3.PublicKey("4inBzE3LkKrJmJsdhkoXc85ZfiXb6dsgDPk2ffkgZDd2"),
-  LAMPORTS_PER_OPOS: 1000_000,
+  oposToken: new web3.PublicKey("Geg5Lp23QM7kJ9XaUAi97V8kx68qXC1MJiehNrgNsRnv"),
+  LAMPORTS_PER_OPOS: 1000_000_000,
   Seeds: {
     mainState: utf8.encode("main_state4"),
     profileState: utf8.encode("profile_state1"),
@@ -18,5 +18,4 @@ export const web3Consts = {
     activationTokenState: utf8.encode("activation_token_state1"),
     vault: utf8.encode("vault1"),
   },
-
 }

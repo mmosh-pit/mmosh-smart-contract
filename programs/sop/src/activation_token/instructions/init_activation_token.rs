@@ -27,7 +27,6 @@ pub fn init_activation_token(
     name: String,
     symbol: String,
     uri: String,
-    amount: u64,
 ) -> Result<()> {
     {
         //NOTE: setup and validation
@@ -46,14 +45,13 @@ pub fn init_activation_token(
         }
 
         profile_state.activation_token = Some(ctx.accounts.activation_token.key());
-        profile_state.total_minted_sft += amount;
         activation_token_state.parent_profile = ctx.accounts.profile.key();
         activation_token_state.creator = ctx.accounts.user.key();
         //TODO: update some main state if fiels are avaible (may be in future)
     }
     {
         //NOTE: minting
-        ctx.accounts.init_token(name, symbol, uri, amount)?;
+        ctx.accounts.init_token(name, symbol, uri, 0)?;
     }
     {
         //NOTE: created mint collection verifiaction
@@ -290,6 +288,7 @@ impl<'info> AInitActivationToken<'info> {
             ),
             amount,
         )?;
+        
 
         Ok(())
     }

@@ -45,10 +45,12 @@ describe("sop", () => {
   it("Initialise Main State!", async () => {
     const accountInfo = await connection.getAccountInfo(adConn.mainState)
     if (accountInfo != null) return
-    const profileMintingCost = new BN(calcNonDecimalValue(1, 6))
+    const profileMintingCost = new BN(calcNonDecimalValue(20000, 9))
+    const invitationMintingCost = new BN(calcNonDecimalValue(1, 9))
     const res = await adConn.initMainState({
       oposToken,
       profileMintingCost,
+      invitationMintingCost,
       mintingCostDistribution: {
         parent: 100 * 20,
         grandParent: 100 * 10,
@@ -67,26 +69,33 @@ describe("sop", () => {
     log({ res })
     // if (res?.Err) throw "initialise mainstate failed"
     assert(res?.Ok, "initialise mainstate failed")
+
   });
 
 
   let profileCollection: web3.PublicKey = null
   it("creating profile Collections", async () => {
+    console.log("main state ",adConn.mainState.toBase58());
     const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
     //skipping membershipPassCollection mintign if it already minted
     if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
       profileCollection = mainStateInfo.profileCollection;
+      console.log("existing profile collection ",profileCollection.toBase58());
       return;
     }
 
-    const name = "Profile Collection"
+    const name = "Moral Panic"
     const res = await adConn.createProfileCollection({
       name,
     })
     assert(res?.Ok, "Unable to create collection")
     log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
     profileCollection = new web3.PublicKey(res.Ok.info.collection)
+
+    console.log("new profile collection ",profileCollection.toBase58());
   })
+
+
 
   let genesisProfile: web3.PublicKey = null
   it("initialise genesis profile", async () => {
@@ -98,9 +107,9 @@ describe("sop", () => {
     const ggreatGrandParent = web3.Keypair.generate().publicKey;
     const parentMint = web3.Keypair.generate().publicKey;
     const res = await adConn.mintGenesisProfile({
-      name: "Genesis Profile",
-      symbol: "",
-      uri: "",
+      name: "Charlie the Cybernatural Owl #0",
+      symbol: "OWL",
+      uri: "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/gensis.json",
       lineage: {
         parent,
         grandParent,
@@ -119,13 +128,18 @@ describe("sop", () => {
     // log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
     const nftInfo = await metaplex.nfts().findByMint({ mintAddress: new web3.PublicKey(genesisProfileStr) })
     assert(nftInfo?.collection?.verified, "collection verification failed")
+
+    console.log("genesisProfileStr ",genesisProfileStr);
   })
+
+
 
   let commonLut: web3.PublicKey = null
   it("Initialise address lookup table", async () => {
     const stateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
     if (stateInfo.commonLut.toBase58() != systemProgram.toBase58()) {
       commonLut = stateInfo.commonLut;
+      console.log("existing lookup table ",commonLut.toBase58());
       return;
     }
 
@@ -151,7 +165,10 @@ describe("sop", () => {
 
     const res2 = await adConn.setCommonLut(commonLut);
     assert(res2.Ok, "Failed to initialise address lookup table")
+    console.log("mew lookup table ",commonLut.toBase58());
   })
+
+
 
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
@@ -186,17 +203,22 @@ describe("sop", () => {
     activationToken = new web3.PublicKey(res.Ok.info.activationToken)
   })
 
+
   it("Mint activationToken", async () => {
     const res = await adConn.mintActivationToken(45, receiver);
     // const res = await adConn.mintActivationToken(5);
     // log({ signature: res.Ok.signature })
     assert(res.Ok, "Failed to mint activation Token")
+    await sleep(2000)
   })
 
 
   /// USER: SIDE
   let userProfile: web3.PublicKey = null
   it("Mint Profile by ActivationToken", async () => {
+    console.log("activationToken ", activationToken.toBase58())
+    console.log("genesisProfile ", genesisProfile.toBase58())
+    console.log("commonLut ", commonLut.toBase58())
     const res = await userConn.mintProfileByActivationToken({
       // name: "Profile By At12345",
       name: "gGreateGrandParent",
@@ -212,21 +234,17 @@ describe("sop", () => {
     userProfile = new web3.PublicKey(res.Ok.info.profile)
   })
 
-
-
   let subscriptionToken: string = null
   it("Initialise Subscription Token", async () => {
     const res = await userConn.initSubscriptionBadge({
       profile: userProfile,
-      name: "User Subscription",
-      // amount: 10
+      name: "User Subscription"
     })
     assert(res.Ok, "Failed to initalise activation token")
     log({ signature: res.Ok.signature, subscriptionToken: res.Ok.info.subscriptionToken })
     subscriptionToken = res.Ok.info.subscriptionToken
   })
-
-
+  
   it("Mint Subscription Token", async () => {
     const res = await userConn.mintSubscriptionToken({ subscriptionToken: subscriptionToken });
     log({ signature: res.Ok.signature })
@@ -253,7 +271,6 @@ describe("sop", () => {
   it("genesis check:", async () => {
     const ggreateGrandParent = userProfile
     const greatGrandParent = subscriptionProfile;
-
     const greatGrandParentSubToken = new web3.PublicKey((await userConn.initSubscriptionBadge({
       profile: greatGrandParent,
       name: "User Subscription"
@@ -299,6 +316,8 @@ describe("sop", () => {
     const parentProfileStateAccount = userConn.__getProfileStateAccount(parent)
     log({ parentState: parentProfileStateAccount.toBase58() })
 
+    
+
     const res = await userConn.mintProfileByActivationToken({
       activationToken: parentSubToken,
       genesisProfile: genesisProfile,
@@ -322,5 +341,4 @@ describe("sop", () => {
       }
     })
   })
-
 })

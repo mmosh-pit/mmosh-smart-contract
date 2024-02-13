@@ -89,10 +89,9 @@ pub mod sop {
         ctx: Context<AInitActivationToken>,
         name: String,
         symbol: String,
-        uri: String,
-        amount: u64,
+        uri: String
     ) -> Result<()> {
-        activation_token::init_activation_token(ctx, name, symbol, uri, amount)?;
+        activation_token::init_activation_token(ctx, name, symbol, uri)?;
         Ok(())
     }
 
