@@ -579,8 +579,7 @@ impl<'info> AMintProfileByAt<'info> {
                 .collect::<Vec<_>>(),
         );
 
-        let entryPoint = "https://gateway.pinata.cloud/ipfs/";
-        let uri = format!("{}{}", entryPoint, uri_hash);
+        let uri = uri_hash;
 
         let asset_data = AssetData {
             name,
