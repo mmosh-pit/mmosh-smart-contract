@@ -49,56 +49,7 @@ pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) ->
     let sender_ata = ctx.accounts.user_opos_ata.to_account_info();
     let authority = ctx.accounts.minter.to_account_info();
     let main_state = &mut ctx.accounts.main_state;
-    let cost = main_state.invitation_minting_cost;
-    let minting_cost_distribution = main_state.minting_cost_distribution;
-
-    // Parent
-    transfer_tokens(
-        sender_ata.to_account_info(),
-        ctx.accounts
-            .parent_profile_holder_opos_ata
-            .to_account_info(),
-        authority.to_account_info(),
-        token_program.to_account_info(),
-        (cost as u128 * minting_cost_distribution.parent as u128
-            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
-    )?;
-
-    // Grand Parent
-    transfer_tokens(
-        sender_ata.to_account_info(),
-        ctx.accounts
-            .grand_parent_profile_holder_opos_ata
-            .to_account_info(),
-        authority.to_account_info(),
-        token_program.to_account_info(),
-        (cost as u128 * minting_cost_distribution.grand_parent as u128
-            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
-    )?;
-
-    // Great Grand Parent
-    transfer_tokens(
-        sender_ata.to_account_info(),
-        ctx.accounts
-            .great_grand_parent_profile_holder_opos_ata
-            .to_account_info(),
-        authority.to_account_info(),
-        token_program.to_account_info(),
-        (cost as u128 * minting_cost_distribution.great_grand_parent as u128
-            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
-    )?;
-
-    // Great Great Grand Parent
-    transfer_tokens(
-        sender_ata.to_account_info(),
-        ctx.accounts
-            .ggreat_grand_parent_profile_holder_opos_ata
-            .to_account_info(),
-        authority.to_account_info(),
-        token_program.to_account_info(),
-        (cost as u128 * minting_cost_distribution.ggreat_grand_parent as u128
-            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
-    )?;
+    let cost = main_state.invitation_minting_cost * amount;
 
     // Genesis
     transfer_tokens(
@@ -108,8 +59,7 @@ pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) ->
             .to_account_info(),
         authority.to_account_info(),
         token_program.to_account_info(),
-        (cost as u128 * minting_cost_distribution.genesis as u128
-            / TOTAL_SELLER_BASIS_POINTS as u128) as u64,
+        cost as u64,
     )?;
     
     Ok(())
