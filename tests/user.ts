@@ -218,7 +218,8 @@ export class Connectivity {
         ggreatGrandParentProfileHolderOposAta,
         genesisProfileHolderOposAta,
       }).instruction()
-      // this.txis.push(ix_share)
+   //   this.txis.push(ix_share)
+     
       const ix = await this.program.methods.mintProfileByAt(
         name, symbol, uriHash, new BN(recentSlot)
       ).accounts({
@@ -292,10 +293,18 @@ export class Connectivity {
       const tx = new web3.VersionedTransaction(message);
       tx.sign([mintKp])
       this.txis = []
+      // tx.sign([mintKp])
+      // const signedTx = await this.provider.wallet.signTransaction(tx as any);
 
-      const signedTx = await this.provider.wallet.signTransaction(tx as any);
-      const txLen = signedTx.serialize().length;
-      log({ txLen, luts: lutsInfo.length });
+      // const txLen = signedTx.serialize().length;
+      // log({ txLen, luts: lutsInfo.length });
+
+      const share_tx = new web3.Transaction().add(ix_share)
+      const sharesignature = await this.provider.sendAndConfirm(share_tx)
+
+      console.log("sharesignature", sharesignature)
+    
+
       const signature = await this.provider.sendAndConfirm(tx as any);
 
       return {
