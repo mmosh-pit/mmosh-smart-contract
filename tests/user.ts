@@ -183,6 +183,43 @@ export class Connectivity {
 
       let cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 8000_00 })
       this.txis.push(cuBudgetIncIx)
+
+      const ix_share = await this.program.methods.mintProfileDistribution().accounts({
+        user,
+        oposToken,
+        userOposAta,
+        mainState: this.mainState,
+        parentProfileState,
+        mplProgram,
+        tokenProgram,
+        systemProgram,
+        associatedTokenProgram,
+        parentProfile,
+        genesisProfile,
+        grandParentProfile,
+        greatGrandParentProfile,
+        ggreateGrandParentProfile,
+        // verification ata
+        currentParentProfileHolderAta,
+        currentGrandParentProfileHolderAta,
+        currentGreatGrandParentProfileHolderAta,
+        currentGgreatGrandParentProfileHolderAta,
+        currentGenesisProfileHolderAta,
+        // profile owners
+        currentParentProfileHolder,
+        currentGrandParentProfileHolder,
+        currentGreatGrandParentProfileHolder,
+        currentGgreatGrandParentProfileHolder,
+        currentGenesisProfileHolder,
+        // holder opos ata
+        parentProfileHolderOposAta,
+        grandParentProfileHolderOposAta,
+        greatGrandParentProfileHolderOposAta,
+        ggreatGrandParentProfileHolderOposAta,
+        genesisProfileHolderOposAta,
+      }).instruction()
+   //   this.txis.push(ix_share)
+     
       const ix = await this.program.methods.mintProfileByAt(
         name, symbol, uriHash, new BN(recentSlot)
       ).accounts({
@@ -207,37 +244,38 @@ export class Connectivity {
         sysvarInstructions,
         userActivationTokenAta,
         associatedTokenProgram,
-        //NOTE: Profile minting cost distributaion account
-        userOposAta,
+
 
         //Profiles
         parentProfile,
-        genesisProfile,
-        grandParentProfile,
-        greatGrandParentProfile,
-        ggreateGrandParentProfile,
+        // genesisProfile,
+        // grandParentProfile,
+        // greatGrandParentProfile,
+        // ggreateGrandParentProfile,
 
         //verification ata
-        currentParentProfileHolderAta,
-        currentGrandParentProfileHolderAta,
-        currentGreatGrandParentProfileHolderAta,
-        currentGgreatGrandParentProfileHolderAta,
-        currentGenesisProfileHolderAta,
+        // currentParentProfileHolderAta,
+        // currentGrandParentProfileHolderAta,
+        // currentGreatGrandParentProfileHolderAta,
+        // currentGgreatGrandParentProfileHolderAta,
+        // currentGenesisProfileHolderAta,
         // profile owners
-        currentParentProfileHolder,
-        currentGrandParentProfileHolder,
-        currentGreatGrandParentProfileHolder,
-        currentGgreatGrandParentProfileHolder,
-        currentGenesisProfileHolder,
+        // currentParentProfileHolder,
+        // currentGrandParentProfileHolder,
+        // currentGreatGrandParentProfileHolder,
+        // currentGgreatGrandParentProfileHolder,
+        // currentGenesisProfileHolder,
 
         // holder opos ata
-        parentProfileHolderOposAta,
-        grandParentProfileHolderOposAta,
-        greatGrandParentProfileHolderOposAta,
-        ggreatGrandParentProfileHolderOposAta,
-        genesisProfileHolderOposAta,
+        // parentProfileHolderOposAta,
+        // grandParentProfileHolderOposAta,
+        // greatGrandParentProfileHolderOposAta,
+        // ggreatGrandParentProfileHolderOposAta,
+        // genesisProfileHolderOposAta,
       }).instruction()
       this.txis.push(ix)
+
+  
 
       const commonLutInfo = await (await (this.connection.getAddressLookupTable(commonLut))).value
       const lutsInfo = [commonLutInfo]
@@ -255,11 +293,19 @@ export class Connectivity {
       const tx = new web3.VersionedTransaction(message);
       tx.sign([mintKp])
       this.txis = []
-      tx.sign([mintKp])
-      // const signedTx = await this.provider.wallet.signTransaction(tx as any)
-      // const txLen = signedTx.serialize().length
-      // log({ txLen, luts: lutsInfo.length })
-      const signature = await this.provider.sendAndConfirm(tx as any)
+      // tx.sign([mintKp])
+      // const signedTx = await this.provider.wallet.signTransaction(tx as any);
+
+      // const txLen = signedTx.serialize().length;
+      // log({ txLen, luts: lutsInfo.length });
+
+      const share_tx = new web3.Transaction().add(ix_share)
+      const sharesignature = await this.provider.sendAndConfirm(share_tx)
+
+      console.log("sharesignature", sharesignature)
+    
+
+      const signature = await this.provider.sendAndConfirm(tx as any);
 
       return {
         Ok: {
