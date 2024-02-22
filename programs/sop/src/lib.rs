@@ -85,6 +85,14 @@ pub mod sop {
         Ok(())
     }
 
+    //User calls
+    pub fn mint_profile_distribution(
+        ctx: Context<MintCostDistribution>,
+    ) -> Result<()> {
+        profile::mint_profile_distribution(ctx)?;
+        Ok(())
+    }
+
     pub fn init_activation_token(
         ctx: Context<AInitActivationToken>,
         name: String,

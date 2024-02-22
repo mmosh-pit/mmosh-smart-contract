@@ -10,7 +10,7 @@ url = "https://api.apr.dev"
 
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "/Users/jeyakumar/.config/solana/id.json"
 
 [scripts]
