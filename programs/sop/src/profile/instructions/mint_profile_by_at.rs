@@ -196,6 +196,13 @@ pub struct AMintProfileByAt<'info> {
     pub user: Signer<'info>,
 
     ///CHECK:
+    #[account(address = MPL_ID)]
+    pub mpl_program: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+
+    ///CHECK:
     #[account(address = main_state.opos_token)]
     pub opos_token: AccountInfo<'info>,
 
