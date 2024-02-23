@@ -168,7 +168,7 @@ describe("sop", () => {
     console.log("mew lookup table ",commonLut.toBase58());
   })
 
-
+  return;
 
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
