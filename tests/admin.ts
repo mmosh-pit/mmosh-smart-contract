@@ -165,13 +165,15 @@ export class Connectivity {
     }
   }
 
-  async createProfileCollection(input: { name?: string, symbol?: string, uri?: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
+  async createCollection(input: { name?: string, symbol?: string, uri?: string, parrentCollection?: web3.PublicKey, collectionType: string }): Promise<Result<TxPassType<{ collection: string }>, any>> {
     try {
       this.reinit();
       let {
         name,
         symbol,
         uri,
+        parrentCollection,
+        collectionType
       } = input;
       name = name ?? ""
       symbol = symbol ?? ""
@@ -185,6 +187,11 @@ export class Connectivity {
       const edition = BaseMpl.getEditionAccount(mint)
       const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
       const collectionState = this.__getCollectionStateAccount(mint)
+
+      const rootCollection = parrentCollection ? parrentCollection : mintKp.publicKey
+
+      const parentCollectionMetadata = BaseMpl.getMetadataAccount(rootCollection)
+      const parentCollectionEdition = BaseMpl.getEditionAccount(rootCollection)
 
       const { ixs: mintIxs } = await this.baseSpl.__getCreateTokenInstructions({
         mintAuthority: admin,
@@ -200,7 +207,7 @@ export class Connectivity {
       const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
       this.txis.push(cuBudgetIncIx)
 
-      const ix = await this.program.methods.createProfileCollection(name, symbol, uri).accounts({
+      const ix = await this.program.methods.createCollection(name, symbol, uri, collectionType).accounts({
         admin,
         adminAta,
         mainState: this.mainState,
@@ -210,6 +217,9 @@ export class Connectivity {
         collectionMetadata: metadata,
         collectionAuthorityRecord,
         collectionState,
+        parentCollection: rootCollection,
+        parentCollectionEdition: parentCollectionEdition,
+        parentCollectionMetadata: parentCollectionMetadata,
         mplProgram,
         tokenProgram,
         systemProgram,
@@ -229,6 +239,66 @@ export class Connectivity {
       return { Err: e };
     }
   }
+
+  async updateCollection(input: { name?: string, symbol?: string, uri?: string, mint?: web3.PublicKey, parrentCollection?: web3.PublicKey}): Promise<Result<TxPassType<{ collection: string }>, any>> {
+    try {
+      this.reinit();
+      let {
+        name,
+        symbol,
+        uri,
+        mint,
+        parrentCollection,
+      } = input;
+      name = name ?? ""
+      symbol = symbol ?? ""
+      uri = uri ?? ""
+      const admin = this.provider.publicKey;
+      if (!admin) throw "Wallet not found"
+
+      const adminAta = getAssociatedTokenAddressSync(mint, admin);
+      const metadata = BaseMpl.getMetadataAccount(mint)
+      const edition = BaseMpl.getEditionAccount(mint)
+      const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
+      const collectionState = this.__getCollectionStateAccount(mint)
+
+      const rootCollection = parrentCollection ? parrentCollection : mint
+      const parentCollectionMetadata = BaseMpl.getMetadataAccount(rootCollection)
+      const parentCollectionEdition = BaseMpl.getEditionAccount(rootCollection)
+
+      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
+      this.txis.push(cuBudgetIncIx)
+
+      const ix = await this.program.methods.updateCollection(name, symbol, uri).accounts({
+        admin,
+        mainState: this.mainState,
+        associatedTokenProgram,
+        collection: mint,
+        collectionEdition: edition,
+        collectionMetadata: metadata,
+        parentCollection: rootCollection,
+        parentCollectionEdition,
+        parentCollectionMetadata,
+        mplProgram,
+        tokenProgram,
+        systemProgram,
+        sysvarInstructions,
+      }).instruction()
+      this.txis.push(ix)
+
+      const tx = new web3.Transaction().add(...this.txis)
+      this.txis = []
+      const signature = await this.provider.sendAndConfirm(tx)
+
+      return {
+        Ok: { signature, info: { collection: mint.toBase58() } }
+      }
+    } catch (e) {
+      log({ error: e })
+      return { Err: e };
+    }
+  }
+
 
   // async mintGenesisProfile(input: { name: string, symbol: string, uri: string }): Promise<Result<TxPassType<{ profile: string }>, any>> {
   async mintGenesisProfile(input: MintProfileByAdminInput): Promise<Result<TxPassType<{ profile: string }>, any>> {
@@ -353,6 +423,10 @@ export class Connectivity {
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
+      const parentCollection = mainStateInfo.badgeCollection
+      const parentCollectionMetadata = BaseMpl.getMetadataAccount(parentCollection)
+      const parentCollectionEdition = BaseMpl.getEditionAccount(parentCollection)
+
       let { name, symbol, uri } = input;
       symbol = symbol ?? ""
       uri = uri ?? ""
@@ -374,6 +448,9 @@ export class Connectivity {
         userActivationTokenAta,
         activationTokenMetadata,
         profileCollectionAuthorityRecord,
+        parentCollection,
+        parentCollectionMetadata,
+        parentCollectionEdition
       }).instruction()
       this.txis.push(ix)
 
@@ -385,6 +462,7 @@ export class Connectivity {
       return { Err: e };
     }
   }
+
 
   async mintActivationToken(amount: number, receiver?: web3.PublicKey | string,): Promise<Result<TxPassType<any>, any>> {
     try {

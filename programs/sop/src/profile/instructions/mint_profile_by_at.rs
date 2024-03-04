@@ -52,15 +52,8 @@ pub fn mint_profile_by_at(
     ctx: Context<AMintProfileByAt>,
     name: Box<String>,
     symbol: Box<String>,
-    // uri: Box<String>,
     uri_hash: Box<String>,
     recent_slot: u64,
-    // MintProfileByAtInput {
-    //     name,
-    //     symbol,
-    //     uri,
-    //     recent_slot,
-    // }: MintProfileByAtInput,
 ) -> Result<()> {
     let name = *name;
     let symbol = *symbol;

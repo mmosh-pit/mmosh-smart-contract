@@ -38,12 +38,6 @@ pub fn init_activation_token(
         //verification
         _verify_collection(&profile_metadata, main_state.profile_collection);
 
-        //state changes
-        msg!("activaiton token: {:?}", profile_state.activation_token);
-        if profile_state.activation_token.is_some() {
-            return anchor_lang::err!(MyError::ActivationTokenAlreadyInitialize);
-        }
-
         profile_state.activation_token = Some(ctx.accounts.activation_token.key());
         activation_token_state.parent_profile = ctx.accounts.profile.key();
         activation_token_state.creator = ctx.accounts.user.key();
@@ -51,7 +45,7 @@ pub fn init_activation_token(
     }
     {
         //NOTE: minting
-        ctx.accounts.init_token(name, symbol, uri, 0)?;
+        ctx.accounts.init_token(name, symbol, uri)?;
     }
     {
         //NOTE: created mint collection verifiaction
@@ -163,6 +157,38 @@ pub struct AInitActivationToken<'info> {
     pub profile_collection_authority_record: AccountInfo<'info>,
 
     ///CHECK:
+    #[account(mut)]
+    pub parent_collection: AccountInfo<'info>,
+
+    ///CHECK:
+    #[account(
+        mut,
+        seeds=[
+            METADATA.as_ref(),
+            MPL_ID.as_ref(),
+            parent_collection.key().as_ref(),
+        ],
+        bump,
+        seeds::program = MPL_ID
+    )]
+    pub parent_collection_metadata: AccountInfo<'info>,
+
+    ///CHECK:
+    #[account(
+        mut,
+        seeds=[
+            METADATA.as_ref(),
+            MPL_ID.as_ref(),
+            parent_collection.key().as_ref(),
+            EDITION.as_ref(),
+        ],
+        bump,
+        seeds::program = MPL_ID
+    )]
+    pub parent_collection_edition: AccountInfo<'info>,
+    
+
+    ///CHECK:
     #[account()]
     pub sysvar_instructions: AccountInfo<'info>,
 
@@ -180,7 +206,6 @@ impl<'info> AInitActivationToken<'info> {
         name: String,
         symbol: String,
         uri: String,
-        amount: u64,
     ) -> Result<()> {
         let mint = self.activation_token.to_account_info();
         let user = self.user.to_account_info();
@@ -200,7 +225,7 @@ impl<'info> AInitActivationToken<'info> {
             uri,
             collection: Some(mpl_token_metadata::state::Collection {
                 verified: false,
-                key: self.profile.key(),
+                key: self.parent_collection.key(),
             }),
             uses: None,
             creators: Some(vec![
@@ -263,60 +288,32 @@ impl<'info> AInitActivationToken<'info> {
             ],
             &[&[SEED_MAIN_STATE, &[main_state._bump]]],
         )?;
-
-        //Minting tokens
-        init_ata_if_needed(
-            mint.to_account_info(),
-            self.user_activation_token_ata.to_account_info(),
-            user.to_account_info(),
-            user.to_account_info(),
-            token_program.to_account_info(),
-            system_program,
-            self.associated_token_program.to_account_info(),
-        )?;
-
-        let cpi_accounts = MintTo {
-            authority: main_state.to_account_info(),
-            mint: mint.to_account_info(),
-            to: self.user_activation_token_ata.to_account_info(),
-        };
-        token::mint_to(
-            CpiContext::new_with_signer(
-                token_program,
-                cpi_accounts,
-                &[&[SEED_MAIN_STATE, &[main_state._bump]]],
-            ),
-            amount,
-        )?;
         
-
         Ok(())
     }
 
     /// collection verification for created activation token
     pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
-        // let mpl_program = self.mpl_program.to_account_info();
-        // let metadata = self.profile_metadata.to_account_info();
-        // let main_state = &mut self.main_state;
-        // let collection = self.profile.to_account_info();
-        // let collection_edition = self.profile_edition.to_account_info();
-        // let collection_metadata = self.profile_metadata.to_account_info();
-        // let collection_authority_record =
-        //     self.profile_collection_authority_record.to_account_info();
-        // let system_program = self.system_program.to_account_info();
-        // let sysvar_instructions = self.sysvar_instructions.to_account_info();
-        //
-        // verify_collection_item_by_main(
-        //     metadata,
-        //     collection,
-        //     collection_metadata,
-        //     collection_edition,
-        //     collection_authority_record,
-        //     main_state,
-        //     mpl_program,
-        //     system_program,
-        //     sysvar_instructions,
-        // )?;
+        let system_program: AccountInfo<'_> = self.system_program.to_account_info();
+        let token_program = self.token_program.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let metadata = self.activation_token_metadata.to_account_info();
+        let main_state = &mut self.main_state;
+        let collection = self.parent_collection.to_account_info();
+        let collection_metadata = self.parent_collection_metadata.to_account_info();
+        let collection_edition = self.parent_collection_edition.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
+
+        verify_collection_item_by_main(
+            metadata,
+            collection,
+            collection_metadata,
+            collection_edition,
+            main_state,
+            mpl_program,
+            system_program,
+            sysvar_instructions,
+        )?;
 
         Ok(())
     }

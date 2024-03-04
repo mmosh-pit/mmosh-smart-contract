@@ -340,6 +340,12 @@ export class Connectivity {
       const activationTokenState = this.__getActivationTokenStateAccount(activationToken)
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
+      const mainStateInfo = await this.program.account.mainState.fetch(this.mainState)
+      const parentCollection = mainStateInfo.badgeCollection
+      const parentCollectionMetadata = BaseMpl.getMetadataAccount(parentCollection)
+      const parentCollectionEdition = BaseMpl.getEditionAccount(parentCollection)
+
+
       const ix = await this.program.methods.initActivationToken(name, symbol, uri).accounts({
         profile,
         mainState: this.mainState,
@@ -358,6 +364,9 @@ export class Connectivity {
         userActivationTokenAta,
         activationTokenMetadata,
         profileCollectionAuthorityRecord,
+        parentCollection,
+        parentCollectionMetadata,
+        parentCollectionEdition
       }).instruction()
       this.txis.push(ix)
 

@@ -24,6 +24,7 @@ use profile::*;
 
 #[program]
 pub mod sop {
+
     use super::*;
 
     //Adming Calls
@@ -54,15 +55,28 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn create_profile_collection(
+    pub fn create_collection(
         ctx: Context<ACreateCollection>,
         name: String,
         symbol: String,
         uri: String,
+        collection_type: String
     ) -> Result<()> {
-        collection_factory::create_profile_collection(ctx, name, symbol, uri)?;
+        collection_factory::create_collection(ctx, name, symbol, uri, collection_type)?;
         Ok(())
     }
+
+    pub fn update_collection<'info>(
+        ctx: Context<AUpdateCollection>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+
+        collection_factory::update_collection(ctx, name, symbol, uri )?;
+        Ok(())
+    }
+
 
     pub fn mint_genesis_profile(
         ctx: Context<AMintProfileByAdmin>,
