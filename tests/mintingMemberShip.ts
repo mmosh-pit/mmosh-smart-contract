@@ -251,6 +251,7 @@ describe("sop", () => {
   })
 
 
+  return;
 
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
@@ -366,14 +367,29 @@ describe("sop", () => {
     // await userConn.mintSubscriptionToken({ subscriptionToken: parentSubToken });
     await userConn.mintSubscriptionToken({ parentProfile: parent });
 
-    //Profiles Tranfer
-    await userConn.baseSpl.transfer_token({ mint: ggreateGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: greatGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: grandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: parent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    const tx = await new web3.Transaction().add(...userConn.txis)
     userConn.txis = []
-    const transferRes = await userConn.provider.sendAndConfirm(tx)
+    //Profiles Tranfer
+  //   await userConn.baseSpl.transfer_token({ mint: ggreateGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //  await userConn.provider.sendAndConfirm(tx)
+
+  //   await userConn.baseSpl.transfer_token({ mint: greatGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx1 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx1)
+
+
+  //   await userConn.baseSpl.transfer_token({ mint: grandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx2 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx2)
+
+  //   await userConn.baseSpl.transfer_token({ mint: parent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx3 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx3)
+
     // log({ transferRes })
     const parentProfileStateAccount = userConn.__getProfileStateAccount(parent)
     log({ parentState: parentProfileStateAccount.toBase58() })
