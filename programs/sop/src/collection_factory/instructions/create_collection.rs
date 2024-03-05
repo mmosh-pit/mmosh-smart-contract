@@ -35,12 +35,8 @@ pub fn create_collection(
     {
         // Setup
         let collection_id = ctx.accounts.collection.key();
-        if collection_type == "root" {
-            ctx.accounts.main_state.root_collection = collection_id;
-        } else if collection_type == "profile" {
+        if collection_type == "profile" {
             ctx.accounts.main_state.profile_collection = collection_id;
-        } else {
-            ctx.accounts.main_state.badge_collection = collection_id;
         }
 
         ctx.accounts.collection_state.collection_id = collection_id;

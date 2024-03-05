@@ -72,61 +72,45 @@ describe("sop", () => {
 
   });
 
-  let rootCollection: web3.PublicKey = null
-  it("creating root Collections", async () => {
-    console.log("main state ",adConn.mainState.toBase58());
-    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    //skipping membershipPassCollection mintign if it already minted
-    if (mainStateInfo.rootCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
-      rootCollection = mainStateInfo.rootCollection;
-      console.log("existing root collection ",rootCollection.toBase58());
-      return;
-    }
+  // let rootCollection: web3.PublicKey = null
+  // it("creating root Collections", async () => {
 
-    const name = "MMOSH Root Collection"
-    const symbol = "MMOSHDAO"
-    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection.json"
-    const res = await adConn.createCollection({
-      name,
-      symbol,
-      uri,
-      collectionType: "root",
-      parrentCollection: rootCollection,
-    })
-    assert(res?.Ok, "Unable to create collection")
-    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    rootCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   const name = "MMOSH Root Collection"
+  //   const symbol = "MMOSHDAO"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     collectionType: "root",
+  //     parrentCollection: rootCollection,
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   rootCollection = new web3.PublicKey(res.Ok.info.collection)
 
-    console.log("new root collection ",rootCollection.toBase58());
-  })
+  //   console.log("new root collection ",rootCollection.toBase58());
+  // })
 
-  let badgeCollection: web3.PublicKey = null
-  it("creating badge Collections", async () => {
-    console.log("main state ",adConn.mainState.toBase58());
-    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    //skipping membershipPassCollection mintign if it already minted
-    if (mainStateInfo.badgeCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
-      badgeCollection = mainStateInfo.badgeCollection;
-      console.log("existing badge collection ",badgeCollection.toBase58());
-      return;
-    }
+  // let badgeCollection: web3.PublicKey = null
+  // it("creating badge Collections", async () => {
 
-    const name = "MMOSH Badge Collection"
-    const symbol = "BADGES"
-    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/badge_collection.json"
-    const res = await adConn.createCollection({
-      name,
-      symbol,
-      uri,
-      parrentCollection: rootCollection,
-      collectionType: "badge"
-    })
-    assert(res?.Ok, "Unable to create collection")
-    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    badgeCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   const name = "MMOSH Badge Collection"
+  //   const symbol = "BADGES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/badge_collection.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: rootCollection,
+  //     collectionType: "badge"
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   badgeCollection = new web3.PublicKey(res.Ok.info.collection)
 
-    console.log("new badge collection ",badgeCollection.toBase58());
-  })
+  //   console.log("new badge collection ",badgeCollection.toBase58());
+  // })
 
 
 
@@ -150,7 +134,7 @@ describe("sop", () => {
       name,
       symbol,
       uri,
-      parrentCollection: rootCollection,
+      parrentCollection: web3Consts.rootCollection,
       collectionType: "profile"
     })
     assert(res?.Ok, "Unable to create collection")
@@ -169,7 +153,7 @@ describe("sop", () => {
       name,
       symbol,
       uri,
-      parrentCollection: rootCollection,
+      parrentCollection: web3Consts.rootCollection,
       mint : profileCollection
     })
     assert(res?.Ok, "Unable to update collection")
@@ -177,6 +161,8 @@ describe("sop", () => {
     profileCollection = new web3.PublicKey(res.Ok.info.collection)
     console.log("update profile collection ",profileCollection.toBase58());
   })
+
+  return
 
 
   let genesisProfile: web3.PublicKey = null

@@ -17,8 +17,6 @@ pub struct MainState {
     pub _bump: u8,
     pub total_minted_profile: u64,
     pub profile_collection: Pubkey,
-    pub root_collection: Pubkey,
-    pub badge_collection: Pubkey,
     pub genesis_profile: Pubkey,
     pub common_lut: Pubkey,
 }

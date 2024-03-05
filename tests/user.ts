@@ -341,7 +341,7 @@ export class Connectivity {
       const userActivationTokenAta = getAssociatedTokenAddressSync(activationToken, user)
 
       const mainStateInfo = await this.program.account.mainState.fetch(this.mainState)
-      const parentCollection = mainStateInfo.badgeCollection
+      const parentCollection = web3Consts.badgeCollection
       const parentCollectionMetadata = BaseMpl.getMetadataAccount(parentCollection)
       const parentCollectionEdition = BaseMpl.getEditionAccount(parentCollection)
 

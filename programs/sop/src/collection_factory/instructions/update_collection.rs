@@ -36,9 +36,9 @@ pub fn update_collection(
         ctx.accounts.update(name, symbol, uri)?;
     }
     
-    // {
-    //     ctx.accounts.verify_collection_item(ctx.program_id)?;
-    // }
+    {
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
+    }
 
     Ok(())
 }
@@ -164,7 +164,7 @@ impl<'info> AUpdateCollection<'info> {
         };
     
         let data = UpdateArgs::V1 { new_update_authority: None, data: Some(data_vtwo), primary_sale_happened: None, is_mutable: None, collection: mpl_token_metadata::instruction::CollectionToggle::Set(mpl_token_metadata::state::Collection {
-            verified: true,
+            verified: false,
             key: self.parent_collection.key(),
         }), collection_details: CollectionDetailsToggle::None, uses: UsesToggle::None, rule_set: RuleSetToggle::None, authorization_data: None };
     
