@@ -72,6 +72,54 @@ describe("sop", () => {
 
   });
 
+  // let rootCollection: web3.PublicKey = null
+  // it("creating root Collections", async () => {
+
+  //   const name = "MMOSH Root Collection"
+  //   const symbol = "MMOSHDAO"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     collectionType: "root",
+  //     parrentCollection: rootCollection,
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   rootCollection = new web3.PublicKey(res.Ok.info.collection)
+
+  //   console.log("new root collection ",rootCollection.toBase58());
+  // })
+
+
+
+
+  // let badgeCollection: web3.PublicKey = null
+  // it("creating badge Collections", async () => {
+
+  //   const name = "MMOSH Badge Collection"
+  //   const symbol = "BADGES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/badge_collection.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     collectionType: "badge"
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   badgeCollection = new web3.PublicKey(res.Ok.info.collection)
+
+  //   console.log("new badge collection ",badgeCollection.toBase58());
+  // })
+
+
+
+
+
+
 
   let profileCollection: web3.PublicKey = null
   it("creating profile Collections", async () => {
@@ -84,17 +132,41 @@ describe("sop", () => {
       return;
     }
 
-    const name = "Moral Panic"
-    const res = await adConn.createProfileCollection({
+    const name = "MMOSH Profile Collection"
+    const symbol = "PROFILES"
+    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
+    const res = await adConn.createCollection({
       name,
+      symbol,
+      uri,
+      parrentCollection: web3Consts.rootCollection,
+      collectionType: "profile"
     })
     assert(res?.Ok, "Unable to create collection")
     log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
     profileCollection = new web3.PublicKey(res.Ok.info.collection)
-
     console.log("new profile collection ",profileCollection.toBase58());
   })
 
+
+
+  // it("update profile Collections", async () => {
+
+  //   const name = "MMOSH Profile Collection"
+  //   const symbol = "PROFILES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
+  //   const res = await adConn.updateCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     mint : profileCollection
+  //   })
+  //   assert(res?.Ok, "Unable to update collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   profileCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   console.log("update profile collection ",profileCollection.toBase58());
+  // })
 
 
   let genesisProfile: web3.PublicKey = null
@@ -149,6 +221,7 @@ describe("sop", () => {
       genesisProfile,
       oposToken,
       stateInfo.profileCollection,
+      web3Consts.badgeCollection,
       BaseMpl.getEditionAccount(stateInfo.profileCollection),
       BaseMpl.getMetadataAccount(stateInfo.profileCollection),
       web3.ComputeBudgetProgram.programId,
@@ -168,49 +241,31 @@ describe("sop", () => {
     console.log("mew lookup table ",commonLut.toBase58());
   })
 
-
-
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
     const __collection = (await adConn.program.account.mainState.fetch(adConn.mainState)).profileCollection;
     const name = "OPOS Activation Badge"
     const symbol = "OPOSACT"
-    // const ipfsHash = deployJsonData({
-    //   "name": name,
-    //   "symbol": symbol,
-    //   "description": "The holder of this OPOS Activation Badge is invited to set up a Profile on OPOS DAO.",
-    //   "image": "",
-    //   "external_url": "https://oposdao.com/",
-    //   "family": "Mapshifting",
-    //   "attributes": [
-    //     {
-    //       "trait_type": "Badge",
-    //       "value": "Activation"
-    //     },
-    //     {
-    //       "trait_type": "EcoSystem",
-    //       "value": "OPOSECO",
-    //     },
-    //   ],
-    // })
-    // const uri = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
     const uri = 'https://gateway.pinata.cloud/ipfs/QmTmLdPTzY5YRHF6AzVf4DSnVeBhXUhPDWaoAYZrF52jXX'
     const res = await adConn.initActivationToken({ name: "Activation Token", symbol, uri })
-    // log({ res })
-    // const res = await userConn.initActivationToken({ profile: __profile, name: "Activation Token" })
     assert(res.Ok, "Failed to initialise activation Token")
     log("ActivationToken: ", res.Ok.info.activationToken)
     activationToken = new web3.PublicKey(res.Ok.info.activationToken)
   })
 
 
-  it("Mint activationToken", async () => {
-    const res = await adConn.mintActivationToken(45, receiver);
-    // const res = await adConn.mintActivationToken(5);
-    // log({ signature: res.Ok.signature })
-    assert(res.Ok, "Failed to mint activation Token")
-    await sleep(2000)
-  })
+
+
+  // it("Mint activationToken", async () => {
+  //   const res = await adConn.mintActivationToken(45, receiver);
+  //   // const res = await adConn.mintActivationToken(5);
+  //   // log({ signature: res.Ok.signature })
+  //   assert(res.Ok, "Failed to mint activation Token")
+  //   await sleep(2000)
+  // })
+
+
+
 
 
   /// USER: SIDE
@@ -233,6 +288,7 @@ describe("sop", () => {
     await sleep(5000)
     userProfile = new web3.PublicKey(res.Ok.info.profile)
   })
+
 
   let subscriptionToken: string = null
   it("Initialise Subscription Token", async () => {
@@ -304,14 +360,29 @@ describe("sop", () => {
     // await userConn.mintSubscriptionToken({ subscriptionToken: parentSubToken });
     await userConn.mintSubscriptionToken({ parentProfile: parent });
 
-    //Profiles Tranfer
-    await userConn.baseSpl.transfer_token({ mint: ggreateGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: greatGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: grandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    await userConn.baseSpl.transfer_token({ mint: parent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
-    const tx = await new web3.Transaction().add(...userConn.txis)
-    userConn.txis = []
-    const transferRes = await userConn.provider.sendAndConfirm(tx)
+  //   userConn.txis = []
+  //   //Profiles Tranfer
+  //   await userConn.baseSpl.transfer_token({ mint: ggreateGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //  await userConn.provider.sendAndConfirm(tx)
+
+  //   await userConn.baseSpl.transfer_token({ mint: greatGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx1 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx1)
+
+
+  //   await userConn.baseSpl.transfer_token({ mint: grandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx2 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx2)
+
+  //   await userConn.baseSpl.transfer_token({ mint: parent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
+  //   const tx3 = await new web3.Transaction().add(...userConn.txis)
+  //   userConn.txis = []
+  //   await userConn.provider.sendAndConfirm(tx3)
+
     // log({ transferRes })
     const parentProfileStateAccount = userConn.__getProfileStateAccount(parent)
     log({ parentState: parentProfileStateAccount.toBase58() })

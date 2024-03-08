@@ -5,8 +5,6 @@ declare_id!("62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF");
 pub mod _main;
 pub mod activation_token;
 pub mod collection_factory;
-pub mod fake_id;
-pub mod offer;
 pub mod profile;
 
 pub mod constants;
@@ -17,13 +15,12 @@ pub mod utils;
 use _main::*;
 use activation_token::*;
 use collection_factory::*;
-use fake_id::*;
-use offer::*;
 use other_states::LineageInfo;
 use profile::*;
 
 #[program]
 pub mod sop {
+
     use super::*;
 
     //Adming Calls
@@ -54,15 +51,28 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn create_profile_collection(
+    pub fn create_collection(
         ctx: Context<ACreateCollection>,
         name: String,
         symbol: String,
         uri: String,
+        collection_type: String
     ) -> Result<()> {
-        collection_factory::create_profile_collection(ctx, name, symbol, uri)?;
+        collection_factory::create_collection(ctx, name, symbol, uri, collection_type)?;
         Ok(())
     }
+
+    pub fn update_collection<'info>(
+        ctx: Context<AUpdateCollection>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+
+        collection_factory::update_collection(ctx, name, symbol, uri )?;
+        Ok(())
+    }
+
 
     pub fn mint_genesis_profile(
         ctx: Context<AMintProfileByAdmin>,
@@ -79,17 +89,8 @@ pub mod sop {
         symbol: Box<String>,
         // uri: Box<String>,
         uri_hash: Box<String>,
-        recent_slot: u64,
     ) -> Result<()> {
-        profile::mint_profile_by_at(ctx, name, symbol, uri_hash, recent_slot)?;
-        Ok(())
-    }
-
-    //User calls
-    pub fn mint_profile_distribution(
-        ctx: Context<MintCostDistribution>,
-    ) -> Result<()> {
-        profile::mint_profile_distribution(ctx)?;
+        profile::mint_profile_by_at(ctx, name, symbol, uri_hash)?;
         Ok(())
     }
 
@@ -108,13 +109,4 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn mint_offer(
-        ctx: Context<AMintOffer>,
-        name: String,
-        symbol: String,
-        uri: String,
-    ) -> Result<()> {
-        offer::mint_offer(ctx, name, symbol, uri)?;
-        Ok(())
-    }
 }

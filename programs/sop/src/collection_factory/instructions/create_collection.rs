@@ -6,12 +6,11 @@ use anchor_spl::{
 use mpl_token_metadata::{
     instruction::{
         approve_collection_authority,
-        builders::{Burn, Create},
-        verify_sized_collection_item, InstructionBuilder,
+        builders::{Burn, Create, UpdateMetadataAccountV2},
+        verify_sized_collection_item, InstructionBuilder, UpdateMetadataAccountArgsV2,
     },
     state::{
-        AssetData, CollectionDetails, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA,
-        TOKEN_RECORD_SEED,
+        AssetData, Collection, CollectionDetails, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED
     },
     ID as MPL_ID,
 };
@@ -22,26 +21,34 @@ use crate::{
     collection_factory::CollectionState,
     constants::{SEED_COLLECTION_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE},
     error::MyError,
-    fake_id::{self, FakeIdState},
-    other_states::LineageInfo,
+    other_states::LineageInfo, utils::verify_collection_item_by_main,
 };
 
-///TODO: there should be
 pub fn create_collection(
     ctx: Context<ACreateCollection>,
     name: String,
     symbol: String,
     uri: String,
+    collection_type: String,
 ) -> Result<()> {
     {
-        ctx.accounts.mint(name, symbol, uri)?;
+        // Setup
+        let collection_id = ctx.accounts.collection.key();
+        if collection_type == "profile" {
+            ctx.accounts.main_state.profile_collection = collection_id;
+        }
+
+        ctx.accounts.collection_state.collection_id = collection_id;
+    }
+    {
+        ctx.accounts.mint(name, symbol, uri, collection_type.to_string())?;
     }
     {
         ctx.accounts.approve_collection_authority_to_main()?;
     }
-
-    {
-        //TODO: creator verification
+    
+    if collection_type != "root" {
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
     }
 
     Ok(())
@@ -71,8 +78,18 @@ pub struct ACreateCollection<'info> {
         mut,
         token::mint = collection,
         token::authority = admin,
+        constraint = admin_ata.amount == 1,
     )]
     pub admin_ata: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        init,
+        payer = admin,
+        seeds = [SEED_COLLECTION_STATE, collection.key().as_ref()],
+        bump,
+        space = 8 + CollectionState::MAX_SIZE
+    )]
+    pub collection_state: Account<'info, CollectionState>,
 
     ///CHECK:
     #[account(
@@ -121,15 +138,47 @@ pub struct ACreateCollection<'info> {
     pub sysvar_instructions: AccountInfo<'info>,
 
     ///CHECK:
+    #[account(mut)]
+    pub parent_collection: AccountInfo<'info>,
+
+    ///CHECK:
+    #[account(
+        mut,
+        seeds=[
+            METADATA.as_ref(),
+            MPL_ID.as_ref(),
+            parent_collection.key().as_ref(),
+        ],
+        bump,
+        seeds::program = MPL_ID
+    )]
+    pub parent_collection_metadata: AccountInfo<'info>,
+
+    ///CHECK:
+    #[account(
+        mut,
+        seeds=[
+            METADATA.as_ref(),
+            MPL_ID.as_ref(),
+            parent_collection.key().as_ref(),
+            EDITION.as_ref(),
+        ],
+        bump,
+        seeds::program = MPL_ID
+    )]
+    pub parent_collection_edition: AccountInfo<'info>,
+    
+
+    ///CHECK:
     #[account(address = MPL_ID)]
     pub mpl_program: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program : Program<'info, AssociatedToken>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> ACreateCollection<'info> {
-    pub fn mint(&mut self, name: String, symbol: String, uri: String) -> Result<()> {
+    pub fn mint(&mut self, name: String, symbol: String, uri: String, collection_type: String) -> Result<()> {
         let mint = self.collection.to_account_info();
         let payer = self.admin.to_account_info();
         let ata = self.admin_ata.to_account_info();
@@ -143,7 +192,7 @@ impl<'info> ACreateCollection<'info> {
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
-        let asset_data = AssetData {
+        let mut asset_data = AssetData {
             name,
             symbol,
             uri,
@@ -173,6 +222,13 @@ impl<'info> ACreateCollection<'info> {
             primary_sale_happened: false,
             seller_fee_basis_points: main_state.seller_fee_basis_points,
         };
+
+        if collection_type != "root" {
+            asset_data.collection = Some(mpl_token_metadata::state::Collection {
+                verified: false,
+                key: self.parent_collection.key(),
+            })
+        }
 
         let ix = Create {
             mint: mint.key(),
@@ -254,48 +310,28 @@ impl<'info> ACreateCollection<'info> {
         Ok(())
     }
 
-    // /// collection verification for created activation token
-    // pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
-    //     let mint = self.collection.to_account_info();
-    //     let user = self.owner.to_account_info();
-    //     let system_program = self.system_program.to_account_info();
-    //     let token_program = self.token_program.to_account_info();
-    //     let mpl_program = self.mpl_program.to_account_info();
-    //     let metadata = self.collection_metadata.to_account_info();
-    //     let main_state = &mut self.main_state;
-    //     let parent_collection = self.parent_collection.to_account_info();
-    //     let parent_collection_metadata = self.parent_collection_metadata.to_account_info();
-    //     let parent_collection_edition = self.parent_collection_edition.to_account_info();
-    //
-    //     let ix = verify_sized_collection_item(
-    //         mpl_program.key(),
-    //         metadata.key(),
-    //         main_state.key(),
-    //         user.key(),
-    //         mint.key(),
-    //         parent_collection.key(),
-    //         parent_collection_edition.key(),
-    //         None,
-    //     );
-    //
-    //     let (_, bump) = Pubkey::find_program_address(&[SEED_MAIN_STATE], program_id);
-    //     invoke_signed(
-    //         &ix,
-    //         &[
-    //             mint,
-    //             user,
-    //             metadata,
-    //             main_state.to_account_info(),
-    //             parent_collection,
-    //             parent_collection_metadata,
-    //             parent_collection_edition,
-    //             system_program,
-    //             token_program,
-    //             mpl_program,
-    //         ],
-    //         &[&[SEED_MAIN_STATE, &[bump]]],
-    //     )?;
-    //
-    //     Ok(())
-    // }
+    pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
+        let system_program = self.system_program.to_account_info();
+        let token_program = self.token_program.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let metadata = self.collection_metadata.to_account_info();
+        let main_state = &mut self.main_state;
+        let collection = self.parent_collection.to_account_info();
+        let collection_metadata = self.parent_collection_metadata.to_account_info();
+        let collection_edition = self.parent_collection_edition.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
+
+        verify_collection_item_by_main(
+            metadata,
+            collection,
+            collection_metadata,
+            collection_edition,
+            main_state,
+            mpl_program,
+            system_program,
+            sysvar_instructions,
+        )?;
+        Ok(())
+    }
 }
