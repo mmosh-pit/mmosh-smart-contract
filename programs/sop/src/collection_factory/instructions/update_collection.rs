@@ -22,7 +22,6 @@ use crate::{
     collection_factory::CollectionState,
     constants::{SEED_COLLECTION_STATE, SEED_MAIN_STATE, SEED_PROFILE_STATE},
     error::MyError,
-    fake_id::{self, FakeIdState},
     other_states::LineageInfo, utils::verify_collection_item_by_main,
 };
 

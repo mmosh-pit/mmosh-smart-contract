@@ -92,6 +92,9 @@ describe("sop", () => {
   //   console.log("new root collection ",rootCollection.toBase58());
   // })
 
+
+
+
   // let badgeCollection: web3.PublicKey = null
   // it("creating badge Collections", async () => {
 
@@ -102,7 +105,7 @@ describe("sop", () => {
   //     name,
   //     symbol,
   //     uri,
-  //     parrentCollection: rootCollection,
+  //     parrentCollection: web3Consts.rootCollection,
   //     collectionType: "badge"
   //   })
   //   assert(res?.Ok, "Unable to create collection")
@@ -111,6 +114,8 @@ describe("sop", () => {
 
   //   console.log("new badge collection ",badgeCollection.toBase58());
   // })
+
+
 
 
 
@@ -144,25 +149,24 @@ describe("sop", () => {
   })
 
 
-  it("update profile Collections", async () => {
 
-    const name = "MMOSH Profile Collection"
-    const symbol = "PROFILES"
-    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
-    const res = await adConn.updateCollection({
-      name,
-      symbol,
-      uri,
-      parrentCollection: web3Consts.rootCollection,
-      mint : profileCollection
-    })
-    assert(res?.Ok, "Unable to update collection")
-    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    profileCollection = new web3.PublicKey(res.Ok.info.collection)
-    console.log("update profile collection ",profileCollection.toBase58());
-  })
+  // it("update profile Collections", async () => {
 
-  return
+  //   const name = "MMOSH Profile Collection"
+  //   const symbol = "PROFILES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
+  //   const res = await adConn.updateCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     mint : profileCollection
+  //   })
+  //   assert(res?.Ok, "Unable to update collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   profileCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   console.log("update profile collection ",profileCollection.toBase58());
+  // })
 
 
   let genesisProfile: web3.PublicKey = null
@@ -217,6 +221,7 @@ describe("sop", () => {
       genesisProfile,
       oposToken,
       stateInfo.profileCollection,
+      web3Consts.badgeCollection,
       BaseMpl.getEditionAccount(stateInfo.profileCollection),
       BaseMpl.getMetadataAccount(stateInfo.profileCollection),
       web3.ComputeBudgetProgram.programId,
@@ -236,9 +241,6 @@ describe("sop", () => {
     console.log("mew lookup table ",commonLut.toBase58());
   })
 
-
-  return;
-
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
     const __collection = (await adConn.program.account.mainState.fetch(adConn.mainState)).profileCollection;
@@ -254,13 +256,17 @@ describe("sop", () => {
 
 
 
-  it("Mint activationToken", async () => {
-    const res = await adConn.mintActivationToken(45, receiver);
-    // const res = await adConn.mintActivationToken(5);
-    // log({ signature: res.Ok.signature })
-    assert(res.Ok, "Failed to mint activation Token")
-    await sleep(2000)
-  })
+  // it("Mint activationToken", async () => {
+  //   const res = await adConn.mintActivationToken(45, receiver);
+  //   // const res = await adConn.mintActivationToken(5);
+  //   // log({ signature: res.Ok.signature })
+  //   assert(res.Ok, "Failed to mint activation Token")
+  //   await sleep(2000)
+  // })
+
+
+
+
 
   /// USER: SIDE
   let userProfile: web3.PublicKey = null
@@ -282,6 +288,7 @@ describe("sop", () => {
     await sleep(5000)
     userProfile = new web3.PublicKey(res.Ok.info.profile)
   })
+
 
   let subscriptionToken: string = null
   it("Initialise Subscription Token", async () => {
@@ -353,8 +360,8 @@ describe("sop", () => {
     // await userConn.mintSubscriptionToken({ subscriptionToken: parentSubToken });
     await userConn.mintSubscriptionToken({ parentProfile: parent });
 
-    userConn.txis = []
-    //Profiles Tranfer
+  //   userConn.txis = []
+  //   //Profiles Tranfer
   //   await userConn.baseSpl.transfer_token({ mint: ggreateGrandParent, sender: provider.publicKey, receiver: web3.Keypair.generate().publicKey, init_if_needed: true }, userConn.ixCallBack)
   //   const tx = await new web3.Transaction().add(...userConn.txis)
   //   userConn.txis = []

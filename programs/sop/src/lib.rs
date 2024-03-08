@@ -5,8 +5,6 @@ declare_id!("62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF");
 pub mod _main;
 pub mod activation_token;
 pub mod collection_factory;
-pub mod fake_id;
-pub mod offer;
 pub mod profile;
 
 pub mod constants;
@@ -17,8 +15,6 @@ pub mod utils;
 use _main::*;
 use activation_token::*;
 use collection_factory::*;
-use fake_id::*;
-use offer::*;
 use other_states::LineageInfo;
 use profile::*;
 
@@ -93,17 +89,8 @@ pub mod sop {
         symbol: Box<String>,
         // uri: Box<String>,
         uri_hash: Box<String>,
-        recent_slot: u64,
     ) -> Result<()> {
-        profile::mint_profile_by_at(ctx, name, symbol, uri_hash, recent_slot)?;
-        Ok(())
-    }
-
-    //User calls
-    pub fn mint_profile_distribution(
-        ctx: Context<MintCostDistribution>,
-    ) -> Result<()> {
-        profile::mint_profile_distribution(ctx)?;
+        profile::mint_profile_by_at(ctx, name, symbol, uri_hash)?;
         Ok(())
     }
 
@@ -122,13 +109,4 @@ pub mod sop {
         Ok(())
     }
 
-    pub fn mint_offer(
-        ctx: Context<AMintOffer>,
-        name: String,
-        symbol: String,
-        uri: String,
-    ) -> Result<()> {
-        offer::mint_offer(ctx, name, symbol, uri)?;
-        Ok(())
-    }
 }
