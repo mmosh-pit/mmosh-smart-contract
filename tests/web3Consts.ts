@@ -9,9 +9,9 @@ export const web3Consts = {
   mplProgram: new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
   associatedTokenProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
   addressLookupTableProgram: web3.AddressLookupTableProgram.programId,
-  oposToken: new web3.PublicKey("6vgT7gxtF8Jdu7foPDZzdHxkwYFX9Y1jvgpxP8vH2Apw"),
-  badgeCollection: new web3.PublicKey("GX2AC9XPza59gUL7mEeCnLPeD6o7bjRbS8xP2S1hgYjp"),
-  rootCollection: new web3.PublicKey("2YsiCzmKFS6QfNL88goG22qbhzxNM7EhrUD4ghWTTYhS"),
+  oposToken: new web3.PublicKey("EG5RfcstzcpmbbajLZovwYeSDdZAkCsUmgc57aw4omGz"),
+  badgeCollection: new web3.PublicKey("DX9up2AMhjiM8SUVkFfj1afdFhhHK2uutebs4Hd2XxNk"),
+  rootCollection: new web3.PublicKey("7nD1XkTZVf7BgcAbTQhM8Lux1wSQDaMydmXfcPMpLjyJ"),
   LAMPORTS_PER_OPOS: 1000_000_000,
   Seeds: {
     mainState: utf8.encode("main_state4"),

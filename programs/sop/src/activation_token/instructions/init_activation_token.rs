@@ -19,7 +19,7 @@ use crate::{
     error::MyError,
     other_states::LineageInfo,
     profile::profile_state::ProfileState,
-    utils::init_ata_if_needed,
+    utils::{init_ata_if_needed, verify_collection_item_by_main},
 };
 
 pub fn init_activation_token(
@@ -43,6 +43,9 @@ pub fn init_activation_token(
     {
         //NOTE: minting
         ctx.accounts.init_token(name, symbol, uri)?;
+    }
+    {
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
     }
     Ok(())
 }
@@ -217,7 +220,7 @@ impl<'info> AInitActivationToken<'info> {
             symbol,
             uri,
             collection: Some(mpl_token_metadata::state::Collection {
-                verified: true,
+                verified: false,
                 key: self.parent_collection.key(),
             }),
             uses: None,
@@ -282,6 +285,31 @@ impl<'info> AInitActivationToken<'info> {
             &[&[SEED_MAIN_STATE, &[main_state._bump]]],
         )?;
         
+        Ok(())
+    }
+
+    pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
+        let system_program = self.system_program.to_account_info();
+        let token_program = self.token_program.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let metadata = self.activation_token_metadata.to_account_info();
+        let main_state = &mut self.main_state;
+        let collection = self.parent_collection.to_account_info();
+        let collection_metadata = self.parent_collection_metadata.to_account_info();
+        let collection_edition = self.parent_collection_edition.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
+
+        verify_collection_item_by_main(
+            metadata,
+            collection,
+            collection_metadata,
+            collection_edition,
+            main_state,
+            mpl_program,
+            system_program,
+            sysvar_instructions,
+        )?;
         Ok(())
     }
 

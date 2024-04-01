@@ -7,7 +7,6 @@ pub mod activation_token;
 pub mod collection_factory;
 pub mod profile;
 pub mod curve;
-pub mod coins;
 
 pub mod constants;
 pub mod error;
@@ -19,7 +18,6 @@ use activation_token::*;
 use collection_factory::*;
 use other_states::LineageInfo;
 use profile::*;
-use coins::*;
 use curve::*;
 
 #[program]
@@ -110,19 +108,6 @@ pub mod sop {
 
     pub fn mint_activation_token(ctx: Context<AMintActivationToken>, amount: u64) -> Result<()> {
         activation_token::mint_activation_token(ctx, amount)?;
-        Ok(())
-    }
-
-    pub fn init_coin_token(
-        ctx: Context<AInitCoinToken>,
-        name: String,
-        symbol: String,
-        uri: String,
-        amount: u64
-    ) -> Result<()> {
-        {
-            coins::init_coin_token(ctx, name, symbol, uri, amount)?;
-        }
         Ok(())
     }
 

@@ -9,8 +9,6 @@ import { BaseMpl } from "./base/baseMpl";
 import { Connectivity as UserConn } from "./user";
 import { calcNonDecimalValue, deployJsonData, parseProfileState, __mintOposToken } from "./utils";
 import { web3Consts } from './web3Consts';
-import { ExponentialCurve, ExponentialCurveConfig } from "./curves";
-import { percent } from "@strata-foundation/spl-utils";
 
 const log = console.log;
 const {
@@ -39,7 +37,7 @@ describe("sop", () => {
   const metaplex = new Metaplex(provider.connection)
   const receiver = new web3.PublicKey("85YaBFhbwuqPiRVNrXdMJwdt1qjdxbtypGcFBc6Tp7qA")
 
-
+  return
 
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
@@ -99,6 +97,8 @@ describe("sop", () => {
 
 
 
+
+
   // let badgeCollection: web3.PublicKey = null
   // it("creating badge Collections", async () => {
 
@@ -125,35 +125,34 @@ describe("sop", () => {
 
 
 
-  // let profileCollection: web3.PublicKey = null
-  // it("creating profile Collections", async () => {
-    // console.log("main state ",adConn.mainState.toBase58());
-    // const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    // //skipping membershipPassCollection mintign if it already minted
-    // if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
-    //   profileCollection = mainStateInfo.profileCollection;
-    //   console.log("existing profile collection ",profileCollection.toBase58());
-    //   return;
-    // }
 
-    // const name = "MMOSH Profile Collection"
-    // const symbol = "PROFILES"
-    // const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
-    // const res = await adConn.createCollection({
-    //   name,
-    //   symbol,
-    //   uri,
-    //   parrentCollection: web3Consts.rootCollection,
-    //   collectionType: "profile"
-    // })
-    // assert(res?.Ok, "Unable to create collection")
-    // log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    // profileCollection = new web3.PublicKey(res.Ok.info.collection)
-    // console.log("new profile collection ",profileCollection.toBase58());
-  // })
+  let profileCollection: web3.PublicKey = null
+  it("creating profile Collections", async () => {
+    console.log("main state ",adConn.mainState.toBase58());
+    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
+    //skipping membershipPassCollection mintign if it already minted
+    if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
+      profileCollection = mainStateInfo.profileCollection;
+      console.log("existing profile collection ",profileCollection.toBase58());
+      return;
+    }
 
+    const name = "MMOSH Profile Collection"
+    const symbol = "PROFILES"
+    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
+    const res = await adConn.createCollection({
+      name,
+      symbol,
+      uri,
+      parrentCollection: web3Consts.rootCollection,
+      collectionType: "profile"
+    })
+    assert(res?.Ok, "Unable to create collection")
+    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+    profileCollection = new web3.PublicKey(res.Ok.info.collection)
+    console.log("new profile collection ",profileCollection.toBase58());
+  })
 
-  // 
 
 
   // it("update profile Collections", async () => {
@@ -174,176 +173,78 @@ describe("sop", () => {
   //   console.log("update profile collection ",profileCollection.toBase58());
   // })
 
-  // return;
 
-
-  // let genesisProfile: web3.PublicKey = null
-  // it("initialise genesis profile", async () => {
-  //   const parent = web3.Keypair.generate().publicKey;
-  //   const grandParent = web3.Keypair.generate().publicKey;
-  //   const greatGrandParent = web3.Keypair.generate().publicKey;
-  //   const creator = web3.Keypair.generate().publicKey;
-  //   // const creator = provider.publicKey
-  //   const ggreatGrandParent = web3.Keypair.generate().publicKey;
-  //   const parentMint = web3.Keypair.generate().publicKey;
-  //   const res = await adConn.mintGenesisProfile({
-  //     name: "Charlie the Cybernatural Owl #0",
-  //     symbol: "OWL",
-  //     uri: "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/gensis.json",
-  //     lineage: {
-  //       parent,
-  //       grandParent,
-  //       greatGrandParent,
-  //       ggreatGrandParent,
-  //       creator,
-  //       generation: new BN(1),
-  //       totalChild: new BN(0),
-  //     },
-  //     parentMint,
-  //   })
-
-  //   assert(res.Ok, "Failed to initialise genesis profile")
-  //   const genesisProfileStr = res.Ok.info.profile
-  //   genesisProfile = new web3.PublicKey(genesisProfileStr)
-  //   // log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
-  //   const nftInfo = await metaplex.nfts().findByMint({ mintAddress: new web3.PublicKey(genesisProfileStr) })
-  //   assert(nftInfo?.collection?.verified, "collection verification failed")
-
-  //   console.log("genesisProfileStr ",genesisProfileStr);
-  // })
-
-
-
-  // let commonLut: web3.PublicKey = null
-  // it("Initialise address lookup table", async () => {
-  //   const stateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-  //   if (stateInfo.commonLut.toBase58() != systemProgram.toBase58()) {
-  //     commonLut = stateInfo.commonLut;
-  //     console.log("existing lookup table ",commonLut.toBase58());
-  //     return;
-  //   }
-
-  //   const res = await adConn.setupLookupTable([
-  //     adConn.programId,
-  //     adConn.mainState,
-  //     genesisProfile,
-  //     oposToken,
-  //     stateInfo.profileCollection,
-  //     web3Consts.badgeCollection,
-  //     BaseMpl.getEditionAccount(stateInfo.profileCollection),
-  //     BaseMpl.getMetadataAccount(stateInfo.profileCollection),
-  //     web3.ComputeBudgetProgram.programId,
-  //     mplProgram,
-  //     tokenProgram,
-  //     systemProgram,
-  //     sysvarInstructions,
-  //     associatedTokenProgram,
-  //     addressLookupTableProgram,
-  //   ])
-  //   assert(res.Ok, "Failed to initialise address lookup table")
-  //   commonLut = new web3.PublicKey(res.Ok.info.lookupTable)
-  //   // log({ signature: res.Ok.signature, lookupTableAddress: addressLookupTable.toBase58() })
-
-  //   const res2 = await adConn.setCommonLut(commonLut);
-  //   assert(res2.Ok, "Failed to initialise address lookup table")
-  //   console.log("mew lookup table ",commonLut.toBase58());
-  // })
-
-  // test bonding curve
-  it("Initialise coin token", async () => {
-
-    // const initres = await userConn.initializeSolStorage({
-    //   mintKeypair: anchor.web3.Keypair.generate(),
-    // });
-
-    // console.log("initres",initres)
-
-    const curveConfig = new ExponentialCurve(
-      {
-        c: new BN(1000000000000), // c = 1
-        b: new BN(0),
-        // @ts-ignore
-        pow: 1,
-        // @ts-ignore
-        frac: 1,
+  let genesisProfile: web3.PublicKey = null
+  it("initialise genesis profile", async () => {
+    const parent = web3.Keypair.generate().publicKey;
+    const grandParent = web3.Keypair.generate().publicKey;
+    const greatGrandParent = web3.Keypair.generate().publicKey;
+    const creator = web3.Keypair.generate().publicKey;
+    // const creator = provider.publicKey
+    const ggreatGrandParent = web3.Keypair.generate().publicKey;
+    const parentMint = web3.Keypair.generate().publicKey;
+    const res = await adConn.mintGenesisProfile({
+      name: "Charlie the Cybernatural Owl #0",
+      symbol: "OWL",
+      uri: "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/gensis.json",
+      lineage: {
+        parent,
+        grandParent,
+        greatGrandParent,
+        ggreatGrandParent,
+        creator,
+        generation: new BN(1),
+        totalChild: new BN(0),
       },
-      0,
-      0
-    );
+      parentMint,
+    })
 
-    const baseAmount = curveConfig.buyTargetAmount(1000, percent(0), percent(0));
+    assert(res.Ok, "Failed to initialise genesis profile")
+    const genesisProfileStr = res.Ok.info.profile
+    genesisProfile = new web3.PublicKey(genesisProfileStr)
+    // log({ sign: res.Ok.signature, profile: res.Ok.info.profile })
+    const nftInfo = await metaplex.nfts().findByMint({ mintAddress: new web3.PublicKey(genesisProfileStr) })
+    assert(nftInfo?.collection?.verified, "collection verification failed")
 
-
-    let curve = await userConn.initializeCurve({
-      config: new ExponentialCurveConfig(curveConfig),
-    });
-    
-
-    const res = await userConn.createTokenBonding({
-      curve:curve,
-      baseMint: web3Consts.oposToken,
-      targetMintDecimals: 9,
-      generalAuthority: receiver,
-      reserveAuthority: receiver,
-      buyBaseRoyaltyPercentage: 0,
-      buyTargetRoyaltyPercentage: 0,
-      sellBaseRoyaltyPercentage: 0,
-      sellTargetRoyaltyPercentage: 0
-    });
-
-    console.log("createTokenBonding",res)
-
-
-    const buyres = await userConn.buy({
-      tokenBonding: res.tokenBonding,
-      desiredTargetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5
-    });
-
-
-    const buyres1 = await userConn.buy({
-      tokenBonding: res.tokenBonding,
-      desiredTargetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5
-    });
-
-
-    const buyres2 = await userConn.buy({
-      tokenBonding: res.tokenBonding,
-      desiredTargetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5
-    });
-
-    const buyres3 = await userConn.buy({
-      tokenBonding: res.tokenBonding,
-      desiredTargetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5
-    });
-
-    const buyres4 = await userConn.buy({
-      tokenBonding: res.tokenBonding,
-      desiredTargetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5
-    });
-
-    console.log("buy result",buyres)
-    console.log("buy result",buyres1)
-    console.log("buy result",buyres2)
-    console.log("buy result",buyres3)
-
-
-    const sellres = await userConn.sell({
-      tokenBonding: res.tokenBonding,
-      targetAmount: new BN(1000 * web3Consts.LAMPORTS_PER_OPOS),
-      slippage: 0.5,
-    });
-
-    console.log("sell result",sellres)
-
-
+    console.log("genesisProfileStr ",genesisProfileStr);
   })
 
-  return
+
+
+  let commonLut: web3.PublicKey = null
+  it("Initialise address lookup table", async () => {
+    const stateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
+    if (stateInfo.commonLut.toBase58() != systemProgram.toBase58()) {
+      commonLut = stateInfo.commonLut;
+      console.log("existing lookup table ",commonLut.toBase58());
+      return;
+    }
+
+    const res = await adConn.setupLookupTable([
+      adConn.programId,
+      adConn.mainState,
+      genesisProfile,
+      oposToken,
+      stateInfo.profileCollection,
+      web3Consts.badgeCollection,
+      BaseMpl.getEditionAccount(stateInfo.profileCollection),
+      BaseMpl.getMetadataAccount(stateInfo.profileCollection),
+      web3.ComputeBudgetProgram.programId,
+      mplProgram,
+      tokenProgram,
+      systemProgram,
+      sysvarInstructions,
+      associatedTokenProgram,
+      addressLookupTableProgram,
+    ])
+    assert(res.Ok, "Failed to initialise address lookup table")
+    commonLut = new web3.PublicKey(res.Ok.info.lookupTable)
+    // log({ signature: res.Ok.signature, lookupTableAddress: addressLookupTable.toBase58() })
+
+    const res2 = await adConn.setCommonLut(commonLut);
+    assert(res2.Ok, "Failed to initialise address lookup table")
+    console.log("mew lookup table ",commonLut.toBase58());
+  })
 
   let activationToken: web3.PublicKey = null
   it("Initialise activation token", async () => {
@@ -360,14 +261,13 @@ describe("sop", () => {
 
 
 
-  // it("Mint activationToken", async () => {
-  //   const res = await adConn.mintActivationToken(45, receiver);
-  //   // const res = await adConn.mintActivationToken(5);
-  //   // log({ signature: res.Ok.signature })
-  //   assert(res.Ok, "Failed to mint activation Token")
-  //   await sleep(2000)
-  // })
-
+  it("Mint activationToken", async () => {
+    const res = await adConn.mintActivationToken(45, receiver);
+    // const res = await adConn.mintActivationToken(5);
+    // log({ signature: res.Ok.signature })
+    assert(res.Ok, "Failed to mint activation Token")
+    await sleep(2000)
+  })
 
 
 
@@ -377,7 +277,6 @@ describe("sop", () => {
   it("Mint Profile by ActivationToken", async () => {
     console.log("activationToken ", activationToken.toBase58())
     console.log("genesisProfile ", genesisProfile.toBase58())
-    console.log("commonLut ", commonLut.toBase58())
     const res = await userConn.mintProfileByActivationToken({
       // name: "Profile By At12345",
       name: "gGreateGrandParent",

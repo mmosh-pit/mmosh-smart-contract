@@ -79,10 +79,10 @@ pub fn mint_profile_by_at(
         //NOTE: minting
         ctx.accounts.mint(name, symbol, uri_hash)?;
     }
-    // {
-    //     //NOTE: created mint collection verifiaction
-    //     ctx.accounts.verify_collection_item(ctx.program_id)?;
-    // }
+    {
+        //NOTE: created mint collection verifiaction
+        ctx.accounts.verify_collection_item(ctx.program_id)?;
+    }
 
     {
         ctx.accounts.burn_activation_token(ctx.program_id)?;
@@ -443,7 +443,7 @@ impl<'info> AMintProfileByAt<'info> {
             symbol,
             uri,
             collection: Some(mpl_token_metadata::state::Collection {
-                verified: true,
+                verified: false,
                 key: self.collection.key(),
             }),
             uses: None,
@@ -601,6 +601,30 @@ impl<'info> AMintProfileByAt<'info> {
         Ok(())
     }
 
+    pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
+        let system_program = self.system_program.to_account_info();
+        let token_program = self.token_program.to_account_info();
+        let mpl_program = self.mpl_program.to_account_info();
+        let metadata = self.profile_metadata.to_account_info();
+        let main_state = &mut self.main_state;
+        let collection = self.collection.to_account_info();
+        let collection_metadata = self.collection_metadata.to_account_info();
+        let collection_edition = self.collection_edition.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
+        let sysvar_instructions = self.sysvar_instructions.to_account_info();
+
+        verify_collection_item_by_main(
+            metadata,
+            collection,
+            collection_metadata,
+            collection_edition,
+            main_state,
+            mpl_program,
+            system_program,
+            sysvar_instructions,
+        )?;
+        Ok(())
+    }
 
     pub fn burn_activation_token(&mut self, program_id: &Pubkey) -> Result<()> {
         let mint = self.activation_token.to_account_info();
