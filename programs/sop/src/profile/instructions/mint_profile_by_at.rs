@@ -33,7 +33,7 @@ use crate::{
     other_states::LineageInfo,
     profile_state::ProfileState,
     utils::{
-        _verify_collection, get_vault_pda, init_ata_if_needed, transfer_tokens,
+        get_vault_pda, init_ata_if_needed, transfer_tokens,
         verify_collection_item_by_main,
     },
 };
@@ -64,8 +64,6 @@ pub fn mint_profile_by_at(
         // let parent_profile_metadata = ctx.accounts.parent_profile_metadata.to_account_info();
         let token_program = ctx.accounts.token_program.to_account_info();
 
-        //verification(parent nft collection check)
-        // _verify_collection(&parent_profile_metadata, ctx.accounts.collection.key())?;
 
         //state changes
         profile_state.mint = ctx.accounts.profile.key();
@@ -587,54 +585,32 @@ impl<'info> AMintProfileByAt<'info> {
             &[
                 mint,
                 user,
-                // user_profile_ata,
                 main_state.to_account_info(),
                 metadata,
                 edition,
                 mpl_program,
-                // associated_token_program,
                 token_program,
                 system_program,
                 sysvar_instructions,
             ],
             &[
                 &[SEED_MAIN_STATE, &[self.main_state._bump]],
-                // &[
-                //     SEED_VAULT,
-                //     self.parent_profile_vault_ata.owner.as_ref(),
-                //     [get_vault_pda(&self.parent_profile_vault_ata.owner).1].as_ref(),
-                // ],
-                // &[
-                //     SEED_VAULT,
-                //     self.grand_parent_profile_vault_ata.owner.as_ref(),
-                //     [get_vault_pda(&self.grand_parent_profile_vault_ata.owner).1].as_ref(),
-                // ],
-                // &[
-                //     SEED_VAULT,
-                //     self.great_grand_parent_profile_vault_ata.owner.as_ref(),
-                //     [get_vault_pda(&self.great_grand_parent_profile_vault_ata.owner).1].as_ref(),
-                // ],
-                // &[
-                //     SEED_VAULT,
-                //     self.genesis_profile_vault_ata.owner.as_ref(),
-                //     [get_vault_pda(&self.genesis_profile_vault_ata.owner).1].as_ref(),
-                // ],
             ],
         )?;
 
         Ok(())
     }
 
-    /// collection verification for created activation token
     pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
+        let system_program = self.system_program.to_account_info();
+        let token_program = self.token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.profile_metadata.to_account_info();
         let main_state = &mut self.main_state;
         let collection = self.collection.to_account_info();
-        let collection_edition = self.collection_edition.to_account_info();
         let collection_metadata = self.collection_metadata.to_account_info();
+        let collection_edition = self.collection_edition.to_account_info();
         // let collection_authority_record = self.collection_authority_record.to_account_info();
-        let system_program = self.system_program.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
         verify_collection_item_by_main(
@@ -642,13 +618,11 @@ impl<'info> AMintProfileByAt<'info> {
             collection,
             collection_metadata,
             collection_edition,
-            // collection_authority_record,
             main_state,
             mpl_program,
             system_program,
             sysvar_instructions,
         )?;
-
         Ok(())
     }
 

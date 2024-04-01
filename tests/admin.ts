@@ -404,7 +404,7 @@ export class Connectivity {
       if (!profile) return { Err: "Genesis profile not found" }
       const profileState = this.__getProfileStateAccount(profile)
       const profileStateInfo = await this.program.account.profileState.fetch(profileState)
-      if (profileStateInfo.activationToken) return { Ok: { signature: "", info: { activationToken: profileStateInfo.activationToken.toBase58() } } }
+     if (profileStateInfo.activationToken) return { Ok: { signature: "", info: { activationToken: profileStateInfo.activationToken.toBase58() } } }
 
       // const mainStateInfo = await this.program.account.mainState.fetch(this.mainState)
       // const collectionStateAccount = this.__getCollectionStateAccount(mainStateInfo.profileCollection)

@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 
-[programs.localnet]
+[programs.devnet]
 sop = "62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF"
 
 [registry]
@@ -10,7 +10,7 @@ url = "https://api.apr.dev"
 
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/jeyakumar/.config/solana/id.json"
 
 [scripts]

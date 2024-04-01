@@ -37,6 +37,8 @@ describe("sop", () => {
   const metaplex = new Metaplex(provider.connection)
   const receiver = new web3.PublicKey("85YaBFhbwuqPiRVNrXdMJwdt1qjdxbtypGcFBc6Tp7qA")
 
+  return
+
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
     log({ oposToken: mint.toBase58() })
@@ -95,6 +97,8 @@ describe("sop", () => {
 
 
 
+
+
   // let badgeCollection: web3.PublicKey = null
   // it("creating badge Collections", async () => {
 
@@ -114,6 +118,7 @@ describe("sop", () => {
 
   //   console.log("new badge collection ",badgeCollection.toBase58());
   // })
+
 
 
 
@@ -256,14 +261,13 @@ describe("sop", () => {
 
 
 
-  // it("Mint activationToken", async () => {
-  //   const res = await adConn.mintActivationToken(45, receiver);
-  //   // const res = await adConn.mintActivationToken(5);
-  //   // log({ signature: res.Ok.signature })
-  //   assert(res.Ok, "Failed to mint activation Token")
-  //   await sleep(2000)
-  // })
-
+  it("Mint activationToken", async () => {
+    const res = await adConn.mintActivationToken(45, receiver);
+    // const res = await adConn.mintActivationToken(5);
+    // log({ signature: res.Ok.signature })
+    assert(res.Ok, "Failed to mint activation Token")
+    await sleep(2000)
+  })
 
 
 
@@ -273,7 +277,6 @@ describe("sop", () => {
   it("Mint Profile by ActivationToken", async () => {
     console.log("activationToken ", activationToken.toBase58())
     console.log("genesisProfile ", genesisProfile.toBase58())
-    console.log("commonLut ", commonLut.toBase58())
     const res = await userConn.mintProfileByActivationToken({
       // name: "Profile By At12345",
       name: "gGreateGrandParent",

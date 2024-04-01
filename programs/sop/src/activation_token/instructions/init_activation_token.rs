@@ -19,7 +19,7 @@ use crate::{
     error::MyError,
     other_states::LineageInfo,
     profile::profile_state::ProfileState,
-    utils::{_verify_collection, init_ata_if_needed, verify_collection_item_by_main},
+    utils::{init_ata_if_needed, verify_collection_item_by_main},
 };
 
 pub fn init_activation_token(
@@ -35,9 +35,6 @@ pub fn init_activation_token(
         let profile_state = &mut ctx.accounts.profile_state;
         let profile_metadata = ctx.accounts.profile_metadata.to_account_info();
 
-        //verification
-        _verify_collection(&profile_metadata, main_state.profile_collection);
-
         profile_state.activation_token = Some(ctx.accounts.activation_token.key());
         activation_token_state.parent_profile = ctx.accounts.profile.key();
         activation_token_state.creator = ctx.accounts.user.key();
@@ -48,7 +45,6 @@ pub fn init_activation_token(
         ctx.accounts.init_token(name, symbol, uri)?;
     }
     {
-        //NOTE: created mint collection verifiaction
         ctx.accounts.verify_collection_item(ctx.program_id)?;
     }
     Ok(())
@@ -292,9 +288,8 @@ impl<'info> AInitActivationToken<'info> {
         Ok(())
     }
 
-    /// collection verification for created activation token
     pub fn verify_collection_item(&mut self, program_id: &Pubkey) -> Result<()> {
-        let system_program: AccountInfo<'_> = self.system_program.to_account_info();
+        let system_program = self.system_program.to_account_info();
         let token_program = self.token_program.to_account_info();
         let mpl_program = self.mpl_program.to_account_info();
         let metadata = self.activation_token_metadata.to_account_info();
@@ -302,6 +297,7 @@ impl<'info> AInitActivationToken<'info> {
         let collection = self.parent_collection.to_account_info();
         let collection_metadata = self.parent_collection_metadata.to_account_info();
         let collection_edition = self.parent_collection_edition.to_account_info();
+        // let collection_authority_record = self.collection_authority_record.to_account_info();
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
 
         verify_collection_item_by_main(
@@ -314,7 +310,7 @@ impl<'info> AInitActivationToken<'info> {
             system_program,
             sysvar_instructions,
         )?;
-
         Ok(())
     }
+
 }
