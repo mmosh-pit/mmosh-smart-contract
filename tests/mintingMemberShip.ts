@@ -71,7 +71,6 @@ describe("sop", () => {
     log({ res })
     // if (res?.Err) throw "initialise mainstate failed"
     assert(res?.Ok, "initialise mainstate failed")
-
   });
 
   // let rootCollection: web3.PublicKey = null
@@ -118,6 +117,29 @@ describe("sop", () => {
 
   //   console.log("new badge collection ",badgeCollection.toBase58());
   // })
+
+
+  let passCollection: web3.PublicKey = null
+  it("creating pass Collections", async () => {
+
+    const name = "MMOSH Pass Collection"
+    const symbol = "PASSES"
+    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/pass_collection.json"
+    const res = await adConn.createCollection({
+      name,
+      symbol,
+      uri,
+      parrentCollection: web3Consts.rootCollection,
+      collectionType: "passes"
+    })
+    assert(res?.Ok, "Unable to create collection")
+    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+    passCollection = new web3.PublicKey(res.Ok.info.collection)
+
+    console.log("new badge collection ",passCollection.toBase58());
+  })
+
+
 
 
 

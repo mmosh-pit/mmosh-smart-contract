@@ -3,6 +3,7 @@ use crate::{
     constants::SEED_MAIN_STATE,
 };
 use anchor_lang::{prelude::*, Discriminator};
+use anchor_spl::token::Mint;
 
 pub fn init_main_state(ctx: Context<AInitMainState>, input: MainStateInput) -> Result<()> {
     let main_state = &mut ctx.accounts.main_state;
@@ -30,3 +31,4 @@ pub struct AInitMainState<'info> {
 
     pub system_program: Program<'info, System>,
 }
+
