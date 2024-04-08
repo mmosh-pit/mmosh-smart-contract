@@ -31,6 +31,7 @@ pub mod sop {
         Ok(())
     }
 
+
     pub fn update_main_state(ctx: Context<AUpdateMainState>, input: MainStateInput) -> Result<()> {
         _main::update_main_state(ctx, input)?;
         Ok(())
@@ -84,6 +85,14 @@ pub mod sop {
         Ok(())
     }
 
+    pub fn project_distribution(
+      ctx: Context<AProjectDistribution>
+  ) -> Result<()> {
+      profile::project_distribution(ctx)?;
+      Ok(())
+  }
+
+
     //User calls
     pub fn mint_profile_by_at(
         ctx: Context<AMintProfileByAt>,
@@ -95,6 +104,32 @@ pub mod sop {
         profile::mint_profile_by_at(ctx, name, symbol, uri_hash)?;
         Ok(())
     }
+
+
+    pub fn mint_genesis_pass(
+      ctx: Context<AMintPassByAdmin>,
+      name: Box<String>,
+      symbol: Box<String>,
+      // uri: Box<String>,
+      uri_hash: Box<String>,
+      input: MainStateInput
+    ) -> Result<()> {
+        profile::mint_genesis_pass(ctx, name, symbol, uri_hash, input)?;
+        Ok(())
+    }
+
+    //User calls
+    pub fn mint_pass_by_at(
+        ctx: Context<AMintPassByAt>,
+        name: Box<String>,
+        symbol: Box<String>,
+        // uri: Box<String>,
+        uri_hash: Box<String>,
+    ) -> Result<()> {
+        profile::mint_pass_by_at(ctx, name, symbol, uri_hash)?;
+        Ok(())
+    }
+    
 
     pub fn init_activation_token(
         ctx: Context<AInitActivationToken>,
@@ -111,6 +146,20 @@ pub mod sop {
         Ok(())
     }
 
+    pub fn init_pass_token(
+      ctx: Context<AInitPassToken>,
+      name: String,
+      symbol: String,
+      uri: String
+    ) -> Result<()> {
+        activation_token::init_pass_token(ctx, name, symbol, uri)?;
+        Ok(())
+    }
+
+    pub fn create_pass_token(ctx: Context<ACreatePassToken>, amount: u64) -> Result<()> {
+      activation_token::create_pass_token(ctx, amount)?;
+      Ok(())
+    }
 
     // curve
 
