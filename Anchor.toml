@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-sop = "62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF"
+mmoshforge = "DCy6L7FGjNZr6oYLZsojS9aC9LJ2XniiTiF7qhkEfBme"
 
 [registry]
 url = "https://api.apr.dev"
@@ -11,7 +11,7 @@ url = "https://api.apr.dev"
 
 [provider]
 cluster = "devnet"
-wallet = "/Users/jeyakumar/.config/solana/id.json"
+wallet = "/Users/jeyakumar/JEYAKUMAR/ssh/hellbender/id.json"
 
 [scripts]
 # test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/sop.ts"

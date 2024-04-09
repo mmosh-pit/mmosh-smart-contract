@@ -1,6 +1,6 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("62toyp2z8hsx3xj1Mx2vHMdsXMfgxTCvJ1tT6BehXpxF");
+declare_id!("DCy6L7FGjNZr6oYLZsojS9aC9LJ2XniiTiF7qhkEfBme");
 
 pub mod _main;
 pub mod activation_token;
@@ -21,7 +21,7 @@ use profile::*;
 use curve::*;
 
 #[program]
-pub mod sop {
+pub mod mmoshforge {
 
     use super::*;
 

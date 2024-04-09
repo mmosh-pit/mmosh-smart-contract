@@ -3,7 +3,7 @@ import { BN, Program, validateAccounts, web3 } from "@coral-xyz/anchor";
 import { base64, utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { amount, approveNftDelegateOperation, GuardNotEnabledError, Metadata, Metaplex, Nft } from "@metaplex-foundation/js";
 import { assert } from "chai";
-import { Sop } from "../target/types/sop";
+import { Mmoshforge } from "../target/types/mmoshforge";
 import { Connectivity as AdConn, sleep } from "./admin";
 import { BaseMpl } from "./base/baseMpl";
 import { Connectivity as UserConn } from "./user";
@@ -27,7 +27,7 @@ describe("sop", () => {
 
   const provider = anchor.AnchorProvider.env();
   const connection = provider.connection;
-  const program = anchor.workspace.Sop as Program<Sop>;
+  const program = anchor.workspace.Mmoshforge as Program<Mmoshforge>;
   const programId = program.programId;
 
   console.log("prgram id ", programId.toBase58())
@@ -35,9 +35,9 @@ describe("sop", () => {
   const adConn = new AdConn(provider, program.programId);
   const userConn = new UserConn(provider, programId);
   const metaplex = new Metaplex(provider.connection)
-  const receiver = new web3.PublicKey("85YaBFhbwuqPiRVNrXdMJwdt1qjdxbtypGcFBc6Tp7qA")
+  const receiver = new web3.PublicKey("DA8ZEAcwZdzBzqrcr5N9vEvvSbBhmrdvpp6V4wksM6eG")
 
-  return
+
 
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
@@ -77,8 +77,8 @@ describe("sop", () => {
   // it("creating root Collections", async () => {
 
   //   const name = "MMOSH Root Collection"
-  //   const symbol = "MMOSHDAO"
-  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection.json"
+  //   const symbol = "MMOSH"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection_new.json"
   //   const res = await adConn.createCollection({
   //     name,
   //     symbol,
@@ -93,6 +93,7 @@ describe("sop", () => {
   //   console.log("new root collection ",rootCollection.toBase58());
   // })
 
+  // return
 
 
 
@@ -103,7 +104,7 @@ describe("sop", () => {
 
   //   const name = "MMOSH Badge Collection"
   //   const symbol = "BADGES"
-  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/badge_collection.json"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/badge_collection_new.json"
   //   const res = await adConn.createCollection({
   //     name,
   //     symbol,
@@ -119,61 +120,53 @@ describe("sop", () => {
   // })
 
 
-  let passCollection: web3.PublicKey = null
-  it("creating pass Collections", async () => {
+  // let passCollection: web3.PublicKey = null
+  // it("creating pass Collections", async () => {
 
-    const name = "MMOSH Pass Collection"
-    const symbol = "PASSES"
-    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/pass_collection.json"
-    const res = await adConn.createCollection({
-      name,
-      symbol,
-      uri,
-      parrentCollection: web3Consts.rootCollection,
-      collectionType: "passes"
-    })
-    assert(res?.Ok, "Unable to create collection")
-    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    passCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   const name = "MMOSH Pass Collection"
+  //   const symbol = "PASSES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/pass_collection_new.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     collectionType: "passes"
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   passCollection = new web3.PublicKey(res.Ok.info.collection)
 
-    console.log("new badge collection ",passCollection.toBase58());
-  })
-
-
+  //   console.log("new badge collection ",passCollection.toBase58());
+  // })
 
 
+  // let profileCollection: web3.PublicKey = null
+  // it("creating profile Collections", async () => {
+  //   console.log("main state ",adConn.mainState.toBase58());
+  //   const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
+  //   //skipping membershipPassCollection mintign if it already minted
+  //   if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
+  //     profileCollection = mainStateInfo.profileCollection;
+  //     console.log("existing profile collection ",profileCollection.toBase58());
+  //     return;
+  //   }
 
-
-
-
-
-
-  let profileCollection: web3.PublicKey = null
-  it("creating profile Collections", async () => {
-    console.log("main state ",adConn.mainState.toBase58());
-    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    //skipping membershipPassCollection mintign if it already minted
-    if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
-      profileCollection = mainStateInfo.profileCollection;
-      console.log("existing profile collection ",profileCollection.toBase58());
-      return;
-    }
-
-    const name = "MMOSH Profile Collection"
-    const symbol = "PROFILES"
-    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection.json"
-    const res = await adConn.createCollection({
-      name,
-      symbol,
-      uri,
-      parrentCollection: web3Consts.rootCollection,
-      collectionType: "profile"
-    })
-    assert(res?.Ok, "Unable to create collection")
-    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    profileCollection = new web3.PublicKey(res.Ok.info.collection)
-    console.log("new profile collection ",profileCollection.toBase58());
-  })
+  //   const name = "MMOSH Profile Collection"
+  //   const symbol = "PROFILES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection_new.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     collectionType: "profile"
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   profileCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   console.log("new profile collection ",profileCollection.toBase58());
+  // })
 
 
 
@@ -206,9 +199,9 @@ describe("sop", () => {
     const ggreatGrandParent = web3.Keypair.generate().publicKey;
     const parentMint = web3.Keypair.generate().publicKey;
     const res = await adConn.mintGenesisProfile({
-      name: "Charlie the Cybernatural Owl #0",
-      symbol: "OWL",
-      uri: "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/gensis.json",
+      name: "The Genesis MMOSH",
+      symbol: "GenMMOSH",
+      uri: "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/gensis_new.json",
       lineage: {
         parent,
         grandParent,
@@ -231,7 +224,7 @@ describe("sop", () => {
     console.log("genesisProfileStr ",genesisProfileStr);
   })
 
-
+return
 
   let commonLut: web3.PublicKey = null
   it("Initialise address lookup table", async () => {

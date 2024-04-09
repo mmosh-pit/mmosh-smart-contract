@@ -3,7 +3,7 @@ import { AnchorProvider, Program, web3, BN } from "@project-serum/anchor";
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import { IDL, Sop } from "../target/types/sop";
+import { IDL, Mmoshforge } from "../target/types/mmoshforge";
 import {
   LineageInfo,
   MainState,
@@ -39,7 +39,7 @@ export class Connectivity {
   txis: web3.TransactionInstruction[] = [];
   extraSigns: web3.Keypair[] = [];
   multiSignInfo: any[] = [];
-  program: Program<Sop>;
+  program: Program<Mmoshforge>;
   owner: web3.PublicKey;
   mainState: web3.PublicKey;
   connection: web3.Connection;

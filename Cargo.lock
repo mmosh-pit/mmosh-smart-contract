@@ -1389,6 +1389,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "mmoshforge"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "blake3",
+ "mpl-token-metadata",
+ "solana-address-lookup-table-program",
+ "solana-program",
+ "spl-token",
+ "toml_datetime",
+ "uint",
+ "winnow",
+]
+
+[[package]]
 name = "mpl-token-auth-rules"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2397,22 +2413,6 @@ dependencies = [
  "subtle",
  "thiserror",
  "zeroize",
-]
-
-[[package]]
-name = "sop"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "blake3",
- "mpl-token-metadata",
- "solana-address-lookup-table-program",
- "solana-program",
- "spl-token",
- "toml_datetime",
- "uint",
- "winnow",
 ]
 
 [[package]]
