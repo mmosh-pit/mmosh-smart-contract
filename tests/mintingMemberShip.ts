@@ -37,7 +37,7 @@ describe("sop", () => {
   const metaplex = new Metaplex(provider.connection)
   const receiver = new web3.PublicKey("DA8ZEAcwZdzBzqrcr5N9vEvvSbBhmrdvpp6V4wksM6eG")
 
-
+  return
 
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
@@ -73,27 +73,29 @@ describe("sop", () => {
     assert(res?.Ok, "initialise mainstate failed")
   });
 
-  // let rootCollection: web3.PublicKey = null
-  // it("creating root Collections", async () => {
 
-  //   const name = "MMOSH Root Collection"
-  //   const symbol = "MMOSH"
-  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection_new.json"
-  //   const res = await adConn.createCollection({
-  //     name,
-  //     symbol,
-  //     uri,
-  //     collectionType: "root",
-  //     parrentCollection: rootCollection,
-  //   })
-  //   assert(res?.Ok, "Unable to create collection")
-  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-  //   rootCollection = new web3.PublicKey(res.Ok.info.collection)
 
-  //   console.log("new root collection ",rootCollection.toBase58());
-  // })
+  let rootCollection: web3.PublicKey = null
+  it("creating root Collections", async () => {
 
-  // return
+    const name = "MMOSH Root Collection"
+    const symbol = "MMOSH"
+    const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/root_collection_new.json"
+    const res = await adConn.createCollection({
+      name,
+      symbol,
+      uri,
+      collectionType: "root",
+      parrentCollection: rootCollection,
+    })
+    assert(res?.Ok, "Unable to create collection")
+    log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+    rootCollection = new web3.PublicKey(res.Ok.info.collection)
+
+    console.log("new root collection ",rootCollection.toBase58());
+  })
+
+  return
 
 
 

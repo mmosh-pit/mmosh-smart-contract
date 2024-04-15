@@ -2,15 +2,15 @@
 seeds = false
 skip-lint = false
 
-[programs.devnet]
-mmoshforge = "DCy6L7FGjNZr6oYLZsojS9aC9LJ2XniiTiF7qhkEfBme"
+[programs.mainnet]
+mmoshforge = "5NaZ252KCHxoVEpGXQE2z5StBQoDoqoTpB2VruauSnGG"
 
 [registry]
 url = "https://api.apr.dev"
 
 
 [provider]
-cluster = "devnet"
+cluster = "mainnet"
 wallet = "/Users/jeyakumar/JEYAKUMAR/ssh/hellbender/id.json"
 
 [scripts]

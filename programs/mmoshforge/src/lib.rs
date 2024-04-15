@@ -1,6 +1,6 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("DCy6L7FGjNZr6oYLZsojS9aC9LJ2XniiTiF7qhkEfBme");
+declare_id!("5NaZ252KCHxoVEpGXQE2z5StBQoDoqoTpB2VruauSnGG");
 
 pub mod _main;
 pub mod activation_token;
