@@ -8,8 +8,7 @@ use anchor_spl::associated_token::{create as create_ata, Create as CreateAta};
 use anchor_spl::token::{self, initialize_account, Token, Transfer};
 
 use mpl_token_metadata::{
-    instruction::{builders::Verify, verify_sized_collection_item, InstructionBuilder},
-    state::{Metadata, TokenMetadataAccount},
+    accounts::Metadata, instructions::{Verify, VerifyInstructionArgs}
 };
 use solana_program::program::{invoke, invoke_signed};
 
@@ -73,9 +72,8 @@ pub fn verify_collection_item_by_main<'info>(
         sysvar_instructions: sysvar_instructions.key(),
         // delegate_record: Some(collection_authority_record.key()),
         delegate_record: None,
-        args: mpl_token_metadata::instruction::VerificationArgs::CollectionV1,
     }
-    .instruction();
+    .instruction(VerifyInstructionArgs {verification_args:mpl_token_metadata::types::VerificationArgs::CollectionV1});
 
     invoke_signed(
         &ix,
@@ -105,7 +103,7 @@ pub fn get_vault_pda(profile_mint: &Pubkey) -> (Pubkey, u8) {
 
 pub fn _verify_collection(metadata_account: &AccountInfo, collection_id: Pubkey) -> Result<()> {
     let metadata =
-        Metadata::from_account_info(metadata_account).map_err(|_| MyError::UnknownNft)?;
+        Metadata::try_from(metadata_account).map_err(|_| MyError::UnknownNft)?;
     let collection_info = metadata.collection.ok_or(MyError::UnknownNft)?;
     if collection_info.key == collection_id && collection_info.verified {
         return Ok(());

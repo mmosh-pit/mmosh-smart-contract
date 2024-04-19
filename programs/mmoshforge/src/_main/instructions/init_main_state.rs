@@ -10,7 +10,7 @@ pub fn init_main_state(ctx: Context<AInitMainState>, input: MainStateInput) -> R
     let owner = ctx.accounts.owner.to_account_info();
     input.set_value(main_state);
     main_state.owner = owner.key();
-    main_state._bump = *ctx.bumps.get("main_state").unwrap();
+    main_state._bump = ctx.bumps.main_state;
 
     Ok(())
 }

@@ -4,13 +4,12 @@ use anchor_spl::{
     token::{self, Mint, Token, TokenAccount},
 };
 use mpl_token_metadata::{
-    instruction::{
-        approve_collection_authority,
-        builders::{Burn, Create, UpdateMetadataAccountV2},
-        verify_sized_collection_item, InstructionBuilder, UpdateMetadataAccountArgsV2,
+    instructions::{
+        ApproveCollectionAuthority, Burn, Create, UpdateMetadataAccountV2,
+        VerifySizedCollectionItem,CreateBuilder
     },
-    state::{
-        AssetData, Collection, CollectionDetails, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED
+    types::{
+        Collection, CollectionDetails, CreateArgs, Creator
     },
     ID as MPL_ID,
 };
@@ -95,7 +94,6 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -108,10 +106,8 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -122,10 +118,8 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds = [
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            COLLECTION_AUTHORITY.as_ref(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -145,7 +139,6 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -158,10 +151,8 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -192,62 +183,89 @@ impl<'info> ACreateCollection<'info> {
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
-        let mut asset_data = AssetData {
-            name,
-            symbol,
-            uri,
-            collection: None,
-            uses: None,
-            creators: Some(vec![
-                Creator {
-                    address: payer.key(),
-                    //TODO: may be require to invoke another instruction to flip the bool
-                    // verified: true,
-                    verified: false,
-                    share: 100,
-                },
-                // Creator {
-                //     address: main_state.key(),
-                //     //TODO: may be require to invoke another instruction to flip the bool
-                //     // verified: true,
-                //     verified: false,
-                //     share: 10,
-                // },
-            ]),
-            collection_details: Some(CollectionDetails::V1 { size: 0 }),
-            // collection_details: None,
-            is_mutable: true,
-            rule_set: None,
-            token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
-            primary_sale_happened: false,
-            seller_fee_basis_points: main_state.seller_fee_basis_points,
-        };
+        let asset_data;
 
         if collection_type != "root" {
-            asset_data.collection = Some(mpl_token_metadata::state::Collection {
-                verified: false,
-                key: self.parent_collection.key(),
-            })
-        }
-
-        let ix = Create {
-            mint: mint.key(),
-            payer: payer.key(),
-            authority: payer.key(),
-            initialize_mint: false,
-            system_program: system_program.key(),
-            metadata: metadata.key(),
-            update_authority: main_state.key(),
-            spl_token_program: token_program.key(),
-            sysvar_instructions: sysvar_instructions.key(),
-            update_authority_as_signer: true,
-            master_edition: Some(edition.key()),
-            args: mpl_token_metadata::instruction::CreateArgs::V1 {
-                asset_data,
+            asset_data = CreateArgs::V1 {
+                name,
+                symbol,
+                uri,
+                collection: Some(mpl_token_metadata::types::Collection {
+                    verified: false,
+                    key: self.parent_collection.key(),
+                }),
+                uses: None,
+                creators: Some(vec![
+                    Creator {
+                        address: payer.key(),
+                        //TODO: may be require to invoke another instruction to flip the bool
+                        // verified: true,
+                        verified: false,
+                        share: 100,
+                    },
+                    // Creator {
+                    //     address: main_state.key(),
+                    //     //TODO: may be require to invoke another instruction to flip the bool
+                    //     // verified: true,
+                    //     verified: false,
+                    //     share: 10,
+                    // },
+                ]),
+                collection_details: Some(CollectionDetails::V1 { size: 0 }),
+                // collection_details: None,
+                is_mutable: true,
+                rule_set: None,
+                token_standard: mpl_token_metadata::types::TokenStandard::NonFungible,
+                primary_sale_happened: false,
+                seller_fee_basis_points: main_state.seller_fee_basis_points,
                 decimals: Some(0),
-                print_supply: Some(mpl_token_metadata::state::PrintSupply::Zero),
-            },
+                print_supply: Some(mpl_token_metadata::types::PrintSupply::Zero),
+            };
+        } else {
+            asset_data = CreateArgs::V1 {
+                name,
+                symbol,
+                uri,
+                collection: None,
+                uses: None,
+                creators: Some(vec![
+                    Creator {
+                        address: payer.key(),
+                        //TODO: may be require to invoke another instruction to flip the bool
+                        // verified: true,
+                        verified: false,
+                        share: 100,
+                    },
+                    // Creator {
+                    //     address: main_state.key(),
+                    //     //TODO: may be require to invoke another instruction to flip the bool
+                    //     // verified: true,
+                    //     verified: false,
+                    //     share: 10,
+                    // },
+                ]),
+                collection_details: Some(CollectionDetails::V1 { size: 0 }),
+                // collection_details: None,
+                is_mutable: true,
+                rule_set: None,
+                token_standard: mpl_token_metadata::types::TokenStandard::NonFungible,
+                primary_sale_happened: false,
+                seller_fee_basis_points: main_state.seller_fee_basis_points,
+                decimals: Some(0),
+                print_supply: Some(mpl_token_metadata::types::PrintSupply::Zero),
+            };
         }
+        
+        let ix = CreateBuilder::new()
+        .metadata(metadata.key())
+        .sysvar_instructions(sysvar_instructions.key())
+        .master_edition(Some(edition.key()))
+        .mint(mint.key(), true)
+        .authority(payer.key())
+        .payer(payer.key())
+        .update_authority(main_state.key(),true)
+        .spl_token_program(Some(token_program.key()))
+        .create_args(asset_data)
         .instruction();
 
         invoke_signed(
@@ -283,15 +301,16 @@ impl<'info> ACreateCollection<'info> {
         let main_state = &mut self.main_state;
         let collection_authority_record = self.collection_authority_record.to_account_info();
 
-        let ix = approve_collection_authority(
-            mpl_program.key(),
-            collection_authority_record.key(),
-            main_state.key(),
-            main_state.key(),
-            payer.key(),
-            metadata.key(),
-            mint.key(),
-        );
+        let ix = ApproveCollectionAuthority{
+            collection_authority_record: collection_authority_record.key(),
+            new_collection_authority: main_state.key(),
+            update_authority: main_state.key(),
+            payer: payer.key(),
+            metadata: metadata.key(),
+            mint: mint.key(),
+            system_program: system_program.key(),
+            rent: None
+        }.instruction();
 
         invoke_signed(
             &ix,

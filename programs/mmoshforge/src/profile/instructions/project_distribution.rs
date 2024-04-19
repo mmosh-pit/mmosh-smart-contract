@@ -5,21 +5,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount},
 };
-use mpl_token_metadata::{
-    instruction::{
-        approve_collection_authority,
-        builders::{Create, Verify},
-        verify_sized_collection_item, InstructionBuilder,
-    },
-    state::{
-        AssetData, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED,
-    },
-    ID as MPL_ID,
-};
-use solana_address_lookup_table_program::{
-    instruction::{create_lookup_table, extend_lookup_table, freeze_lookup_table},
-    ID as ADDRESS_LOOKUP_TABLE_PROGRAM,
-};
+use mpl_token_metadata::ID as MPL_ID;
 use solana_program::program::{invoke, invoke_signed};
 
 use crate::{

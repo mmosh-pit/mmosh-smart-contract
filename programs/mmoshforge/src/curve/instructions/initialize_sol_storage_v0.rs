@@ -50,7 +50,7 @@ pub fn handler(
   args: InitializeSolStorageV0Args,
 ) -> Result<()> {
   let state = &mut ctx.accounts.state;
-  state.bump_seed = *ctx.bumps.get("state").unwrap();
+  state.bump_seed = ctx.bumps.state;
   state.mint_authority_bump_seed = args.mint_authority_bump_seed;
   state.sol_storage_bump_seed = args.sol_storage_bump_seed;
   state.sol_storage = ctx.accounts.sol_storage.key();

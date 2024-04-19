@@ -149,7 +149,7 @@ pub fn handler(
   bonding.sell_frozen = args.sell_frozen;
   bonding.ignore_external_reserve_changes = args.ignore_external_reserve_changes;
   bonding.ignore_external_supply_changes = args.ignore_external_supply_changes;
-  bonding.bump_seed = *ctx.bumps.get("token_bonding").unwrap();
+  bonding.bump_seed = ctx.bumps.token_bonding;
   bonding.index = args.index;
 
   if args.initial_reserves_pad > 0 || args.initial_supply_pad > 0 {

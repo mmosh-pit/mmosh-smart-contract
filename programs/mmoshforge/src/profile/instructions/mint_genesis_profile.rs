@@ -1,17 +1,14 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Mint, MintTo, Token, TokenAccount},
+    token::{self, Approve, Mint, MintTo, Token, TokenAccount},
 };
 use mpl_token_metadata::{
-    instruction::{
-        approve_collection_authority,
-        builders::{Burn, Create, Mint as MintNft, Verify},
-        verify_sized_collection_item, InstructionBuilder, MintArgs,
+    instructions::{
+        ApproveCollectionAuthority, Burn, Create, CreateBuilder, Mint as MintNft, Verify, VerifySizedCollectionItem
     },
-    state::{
-        AssetData, Creator, PrintSupply, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA,
-        TOKEN_RECORD_SEED,
+    types::{
+        CreateArgs, Creator, PrintSupply
     },
     ID as MPL_ID,
 };
@@ -126,7 +123,6 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
         ],
@@ -139,10 +135,8 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -164,7 +158,6 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -177,10 +170,8 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -191,10 +182,8 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds = [
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            COLLECTION_AUTHORITY.as_ref(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -206,10 +195,8 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds = [
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
-            COLLECTION_AUTHORITY.as_ref(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -254,11 +241,11 @@ impl<'info> AMintProfileByAdmin<'info> {
         // };
         // token::mint_to(CpiContext::new(token_program.clone(), cpi_mint_accounts), 1)?;
 
-        let asset_data = AssetData {
+        let asset_data = CreateArgs::V1 {
             name,
             symbol,
             uri,
-            collection: Some(mpl_token_metadata::state::Collection {
+            collection: Some(mpl_token_metadata::types::Collection {
                 verified: false,
                 key: self.collection.key(),
             }),
@@ -268,32 +255,28 @@ impl<'info> AMintProfileByAdmin<'info> {
                 share: 100,
                 address: self.admin.key(),
             }]),
-            collection_details: Some(mpl_token_metadata::state::CollectionDetails::V1 { size: 0 }),
+            collection_details: Some(mpl_token_metadata::types::CollectionDetails::V1 { size: 0 }),
             is_mutable: true, //NOTE: may be for testing
             rule_set: None,
-            token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
+            token_standard: mpl_token_metadata::types::TokenStandard::NonFungible,
             primary_sale_happened: false,
             seller_fee_basis_points: main_state.seller_fee_basis_points,
+            decimals: Some(0),
+            print_supply: Some(PrintSupply::Zero),
         };
 
-        let ix = Create {
-            mint: mint.key(),
-            payer: admin.key(),
-            authority: admin.key(),
-            initialize_mint: false,
-            system_program: system_program.key(),
-            metadata: metadata.key(),
-            update_authority: main_state.key(),
-            spl_token_program: token_program.key(),
-            sysvar_instructions: sysvar_instructions.key(),
-            update_authority_as_signer: true,
-            master_edition: Some(edition.key()),
-            args: mpl_token_metadata::instruction::CreateArgs::V1 {
-                asset_data,
-                decimals: Some(0),
-                print_supply: Some(PrintSupply::Zero),
-            },
-        }
+
+        let ix = CreateBuilder::new()
+        .metadata(metadata.key())
+        .master_edition(Some(edition.key()))
+        .mint( mint.key(), true)
+        .authority(admin.key())
+        .payer(admin.key())
+        .update_authority(main_state.key(),true)
+        .spl_token_program(Some(token_program.key()))
+        .sysvar_instructions(sysvar_instructions.key())
+        .system_program(system_program.key())
+        .create_args(asset_data)
         .instruction();
 
         invoke_signed(
@@ -357,15 +340,17 @@ impl<'info> AMintProfileByAdmin<'info> {
         let sub_collection_authority_record =
             self.sub_collection_authority_record.to_account_info();
 
-        let ix = approve_collection_authority(
-            mpl_program.key(),
-            sub_collection_authority_record.key(),
-            main_state.key(),
-            main_state.key(),
-            payer.key(),
-            metadata.key(),
-            mint.key(),
-        );
+
+        let ix = ApproveCollectionAuthority{
+            collection_authority_record: sub_collection_authority_record.key(),
+            new_collection_authority: main_state.key(),
+            update_authority: main_state.key(),
+            payer: payer.key(),
+            metadata: metadata.key(),
+            mint: mint.key(),
+            system_program: system_program.key(),
+            rent: None
+        }.instruction();
 
         invoke_signed(
             &ix,

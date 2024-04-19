@@ -1,14 +1,12 @@
+use std::env::args;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Mint, MintTo, Token, TokenAccount},
 };
 use mpl_token_metadata::{
-    instruction::{builders::{Create, Verify}, verify_sized_collection_item, InstructionBuilder},
-    state::{
-        AssetData, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED,
-    },
-    ID as MPL_ID,
+    instructions::{Create, CreateBuilder, Verify, VerifyInstructionArgs}, types::Creator, types::CreateArgs, ID as MPL_ID
 };
 use solana_program::program::{invoke, invoke_signed};
 
@@ -101,7 +99,6 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             activation_token.key().as_ref(),
         ],
@@ -124,7 +121,6 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
         ],
@@ -137,10 +133,8 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -151,10 +145,8 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds = [
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
-            COLLECTION_AUTHORITY.as_ref(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -170,7 +162,6 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -183,10 +174,8 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -225,11 +214,11 @@ impl<'info> AInitPassToken<'info> {
         let sysvar_instructions = self.sysvar_instructions.to_account_info();
         let main_state = &mut self.main_state;
 
-        let asset_data = AssetData {
+        let asset_data = CreateArgs::V1 {
             name,
             symbol,
             uri,
-            collection: Some(mpl_token_metadata::state::Collection {
+            collection: Some(mpl_token_metadata::types::Collection {
                 verified: false,
                 key: self.parent_collection.key(),
             }),
@@ -254,29 +243,23 @@ impl<'info> AInitPassToken<'info> {
             collection_details: None,
             is_mutable: true, //NOTE: may be for testing
             rule_set: None,
-            token_standard: mpl_token_metadata::state::TokenStandard::FungibleAsset,
+            token_standard: mpl_token_metadata::types::TokenStandard::FungibleAsset,
             primary_sale_happened: false,
             seller_fee_basis_points: 100,
+            decimals: Some(0),
+            print_supply: None,
         };
 
-        let ix = Create {
-            mint: mint.key(),
-            payer: user.key(),
-            authority: main_state.key(),
-            initialize_mint: true,
-            system_program: system_program.key(),
-            metadata: metadata.key(),
-            update_authority: main_state.key(),
-            spl_token_program: token_program.key(),
-            sysvar_instructions: sysvar_instructions.key(),
-            update_authority_as_signer: true,
-            master_edition: None,
-            args: mpl_token_metadata::instruction::CreateArgs::V1 {
-                asset_data,
-                decimals: Some(0),
-                print_supply: None,
-            },
-        }
+        let ix = CreateBuilder::new()
+        .metadata(metadata.key())
+        .master_edition(None)
+        .mint( mint.key(), true)
+        .authority(main_state.key())
+        .payer(user.key())
+        .update_authority(main_state.key(),true)
+        .spl_token_program(Some(token_program.key()))
+        .sysvar_instructions(sysvar_instructions.key())
+        .create_args(asset_data)
         .instruction();
 
         invoke_signed(
@@ -320,9 +303,10 @@ impl<'info> AInitPassToken<'info> {
             sysvar_instructions: sysvar_instructions.key(),
             // delegate_record: Some(collection_authority_record.key()),
             delegate_record: None,
-            args: mpl_token_metadata::instruction::VerificationArgs::CollectionV1,
         }
-        .instruction();
+        .instruction(VerifyInstructionArgs{
+            verification_args: mpl_token_metadata::types::VerificationArgs::CollectionV1
+        });
     
         invoke_signed(
             &ix,

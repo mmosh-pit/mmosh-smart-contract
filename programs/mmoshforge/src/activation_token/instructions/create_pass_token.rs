@@ -3,11 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Mint, MintTo, Token, TokenAccount},
 };
-use mpl_token_metadata::{
-    instruction::{builders::Create, verify_sized_collection_item, InstructionBuilder},
-    state::{AssetData, Creator, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED},
-    ID as MPL_ID,
-};
+use mpl_token_metadata::instructions::Create;
 use solana_program::program::{invoke, invoke_signed};
 
 use crate::{

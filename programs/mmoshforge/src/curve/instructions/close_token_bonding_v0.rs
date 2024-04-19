@@ -65,7 +65,7 @@ pub fn handler(ctx: Context<CloseTokenBondingV0>) -> Result<()> {
         },
         bonding_seeds,
       ),
-      spl_token::instruction::AuthorityType::MintTokens,
+      anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens,
       Some(ctx.accounts.general_authority.key()),
     )?;
   }

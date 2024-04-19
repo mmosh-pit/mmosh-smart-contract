@@ -122,7 +122,7 @@ pub fn verify_empty_or_mint<'info>(
   if *maybe_token_account.owner == system_program::ID {
     Ok(())
   } else {
-    let acc: Account<'info, TokenAccount> = Account::try_from(maybe_token_account)?;
+    let acc: Account<'info, TokenAccount> = Account::try_from(&maybe_token_account)?;
     if acc.mint == *mint {
       Ok(())
     } else {

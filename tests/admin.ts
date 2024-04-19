@@ -111,6 +111,7 @@ export class Connectivity {
         .rpc();
       return { Ok: { signature } };
     } catch (e) {
+      console.log("error is ",e)
       return { Err: e };
     }
   }

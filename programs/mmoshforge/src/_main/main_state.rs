@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::{AnchorDeserialize, AnchorSerialize};
-use mpl_token_metadata::state::{Metadata, TokenMetadataAccount};
+use mpl_token_metadata::accounts::Metadata;
 
 use crate::error::MyError;
 use crate::other_states::{MintingCostDistribution, TradingPriceDistribution};
@@ -35,7 +35,7 @@ impl MainState {
         metadata_account_info: &AccountInfo,
     ) -> Result<()> {
         let metadata =
-            Metadata::from_account_info(metadata_account_info).map_err(|_| MyError::UnknownNft)?;
+            Metadata::try_from(metadata_account_info).map_err(|_| MyError::UnknownNft)?;
         let collection_info = metadata.collection.ok_or(MyError::UnknownNft)?;
         // require!(
         //     collection_info.key == self.activation_token_collection_id && collection_info.verified,

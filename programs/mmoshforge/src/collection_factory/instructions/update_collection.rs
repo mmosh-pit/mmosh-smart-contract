@@ -3,15 +3,12 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Mint, Token, TokenAccount},
 };
-use mpl_token_metadata::instruction::{CollectionDetailsToggle, RuleSetToggle, UpdateArgs, UsesToggle};
 use mpl_token_metadata::{
-    instruction::{
-        approve_collection_authority,
-        builders::Update,
-        verify_sized_collection_item, InstructionBuilder, UpdateMetadataAccountArgsV2,
+    instructions::{
+        ApproveCollectionAuthority, Update, UpdateInstructionArgs, VerifySizedCollectionItem
     },
-    state::{
-        AssetData, Collection, CollectionDetails, Creator, Data, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED
+    types::{
+        Collection, CollectionDetails, CollectionDetailsToggle, Creator, Data, RuleSetToggle, UpdateArgs, UsesToggle
     },
     ID as MPL_ID,
 };
@@ -64,7 +61,6 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -77,10 +73,8 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -99,7 +93,6 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -112,10 +105,8 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -162,7 +153,7 @@ impl<'info> AUpdateCollection<'info> {
                     ]),
         };
     
-        let data = UpdateArgs::V1 { new_update_authority: None, data: Some(data_vtwo), primary_sale_happened: None, is_mutable: None, collection: mpl_token_metadata::instruction::CollectionToggle::Set(mpl_token_metadata::state::Collection {
+        let data = UpdateArgs::V1 { new_update_authority: None, data: Some(data_vtwo), primary_sale_happened: None, is_mutable: None, collection: mpl_token_metadata::types::CollectionToggle::Set(mpl_token_metadata::types::Collection {
             verified: false,
             key: self.parent_collection.key(),
         }), collection_details: CollectionDetailsToggle::None, uses: UsesToggle::None, rule_set: RuleSetToggle::None, authorization_data: None };
@@ -173,14 +164,13 @@ impl<'info> AUpdateCollection<'info> {
            edition: Some(collection_edition.key()),
            token: None,
            payer: payer.key(),
-           args: data,
            authority: main_state.key(),
            delegate_record: None,
            authorization_rules: None,
            authorization_rules_program: None,
            system_program: system_program.key(),
            sysvar_instructions: self.sysvar_instructions.clone().key()
-        }.instruction();
+        }.instruction(UpdateInstructionArgs{update_args: data});
     
     
         invoke_signed(&ix, &[

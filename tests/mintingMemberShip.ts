@@ -37,7 +37,7 @@ describe("sop", () => {
   const metaplex = new Metaplex(provider.connection)
   const receiver = new web3.PublicKey("DA8ZEAcwZdzBzqrcr5N9vEvvSbBhmrdvpp6V4wksM6eG")
 
-  return
+
 
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
@@ -45,6 +45,7 @@ describe("sop", () => {
   })
 
   it("Initialise Main State!", async () => {
+    console.log(adConn.mainState.toBase58())
     const accountInfo = await connection.getAccountInfo(adConn.mainState)
     if (accountInfo != null) return
     const profileMintingCost = new BN(calcNonDecimalValue(20000, 9))
@@ -73,6 +74,7 @@ describe("sop", () => {
     assert(res?.Ok, "initialise mainstate failed")
   });
 
+  return
 
 
   let rootCollection: web3.PublicKey = null

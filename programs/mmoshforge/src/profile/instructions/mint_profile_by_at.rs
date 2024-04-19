@@ -6,14 +6,10 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount},
 };
 use mpl_token_metadata::{
-    instruction::{
-        approve_collection_authority,
-        builders::{Create, Verify},
-        verify_sized_collection_item, InstructionBuilder,
+    instructions::{
+        ApproveCollectionAuthority, Create, CreateBuilder, Verify
     },
-    state::{
-        AssetData, Creator, COLLECTION_AUTHORITY, EDITION, PREFIX as METADATA, TOKEN_RECORD_SEED,
-    },
+    types::{CreateArgs, Creator},
     ID as MPL_ID,
 };
 use solana_address_lookup_table_program::{
@@ -164,7 +160,6 @@ pub struct AMintProfileByAt<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
         ],
@@ -177,10 +172,8 @@ pub struct AMintProfileByAt<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -214,7 +207,6 @@ pub struct AMintProfileByAt<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -227,10 +219,8 @@ pub struct AMintProfileByAt<'info> {
     #[account(
         mut,
         seeds=[
-            METADATA.as_ref(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
-            EDITION.as_ref(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -438,43 +428,38 @@ impl<'info> AMintProfileByAt<'info> {
         let entry_point = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/".to_string();
         let uri = format!("{}{}", entry_point, uri_hash);
 
-        let asset_data = AssetData {
+        let asset_data = CreateArgs::V1 {
             name,
             symbol,
             uri,
-            collection: Some(mpl_token_metadata::state::Collection {
+            collection: Some(mpl_token_metadata::types::Collection {
                 verified: false,
                 key: self.collection.key(),
             }),
             uses: None,
             creators,
             // creators: None,
-            collection_details: Some(mpl_token_metadata::state::CollectionDetails::V1 { size: 0 }),
+            collection_details: Some(mpl_token_metadata::types::CollectionDetails::V1 { size: 0 }),
             is_mutable: true, //NOTE: may be for testing
             rule_set: None,
-            token_standard: mpl_token_metadata::state::TokenStandard::NonFungible,
+            token_standard: mpl_token_metadata::types::TokenStandard::NonFungible,
             primary_sale_happened: true,
             seller_fee_basis_points, //EX: 20% (80% goes to seller)
+            decimals: Some(0),
+            print_supply: Some(mpl_token_metadata::types::PrintSupply::Zero),
         };
 
-        let ix = Create {
-            mint: mint.key(),
-            payer: user.key(),
-            authority: user.key(),
-            initialize_mint: false,
-            system_program: system_program.key(),
-            metadata: metadata.key(),
-            update_authority: main_state.key(),
-            spl_token_program: token_program.key(),
-            sysvar_instructions: sysvar_instructions.key(),
-            update_authority_as_signer: true,
-            master_edition: Some(edition.key()),
-            args: mpl_token_metadata::instruction::CreateArgs::V1 {
-                asset_data,
-                decimals: Some(0),
-                print_supply: Some(mpl_token_metadata::state::PrintSupply::Zero),
-            },
-        }
+        let ix = CreateBuilder::new()
+        .metadata(metadata.key())
+        .master_edition(Some(edition.key()))
+        .mint( mint.key(), true)
+        .authority(user.key())
+        .payer(user.key())
+        .update_authority(main_state.key(),true)
+        .spl_token_program(Some(token_program.key()))
+        .sysvar_instructions(sysvar_instructions.key())
+        .system_program(system_program.key())
+        .create_args(asset_data)
         .instruction();
 
         // NOTE: minting cost distribution
