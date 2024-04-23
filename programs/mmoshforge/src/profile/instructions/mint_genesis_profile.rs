@@ -123,6 +123,7 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
         ],
@@ -135,8 +136,10 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -158,6 +161,7 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -170,8 +174,10 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -182,8 +188,10 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds = [
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
+            "collection_authority".as_bytes(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -195,8 +203,10 @@ pub struct AMintProfileByAdmin<'info> {
     #[account(
         mut,
         seeds = [
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
+            "collection_authority".as_bytes(),
             main_state.key().as_ref(),
         ],
         bump,

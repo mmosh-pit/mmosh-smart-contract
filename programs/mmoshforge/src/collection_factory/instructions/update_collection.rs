@@ -61,6 +61,7 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -73,8 +74,10 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -93,6 +96,7 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -105,8 +109,10 @@ pub struct AUpdateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID

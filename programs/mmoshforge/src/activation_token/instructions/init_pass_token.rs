@@ -99,6 +99,7 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             activation_token.key().as_ref(),
         ],
@@ -121,6 +122,7 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
         ],
@@ -133,8 +135,10 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -145,8 +149,10 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds = [
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
+            "collection_authority".as_bytes(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -162,6 +168,7 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -174,8 +181,10 @@ pub struct AInitPassToken<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID

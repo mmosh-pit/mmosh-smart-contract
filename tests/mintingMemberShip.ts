@@ -30,7 +30,7 @@ describe("sop", () => {
   const program = anchor.workspace.Mmoshforge as Program<Mmoshforge>;
   const programId = program.programId;
 
-  return;
+
 
   console.log("prgram id ", programId.toBase58())
   const owner = provider.publicKey;
@@ -41,10 +41,12 @@ describe("sop", () => {
 
 
 
+
   it("minting opos token", async () => {
     const { mint, txSignature } = await __mintOposToken(provider);
     log({ oposToken: mint.toBase58() })
   })
+
 
 
 
@@ -78,7 +80,7 @@ describe("sop", () => {
     assert(res?.Ok, "initialise mainstate failed")
   });
 
-  return
+
 
 
   let rootCollection: web3.PublicKey = null

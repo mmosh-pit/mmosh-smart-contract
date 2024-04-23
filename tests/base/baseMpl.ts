@@ -74,8 +74,10 @@ export class BaseMpl {
   static getEditionAccount(tokenId: web3.PublicKey) {
     return web3.PublicKey.findProgramAddressSync(
       [
+        utf8.encode("metadata"),
         MPL_ID.toBuffer(),
         tokenId.toBuffer(),
+        utf8.encode("edition"),
       ],
       MPL_ID
     )[0];
@@ -83,7 +85,7 @@ export class BaseMpl {
 
   static getMetadataAccount(tokenId: web3.PublicKey) {
     return web3.PublicKey.findProgramAddressSync(
-      [MPL_ID.toBuffer(), tokenId.toBuffer()],
+      [utf8.encode("metadata"), MPL_ID.toBuffer(), tokenId.toBuffer()],
       MPL_ID
     )[0];
   }
@@ -91,8 +93,10 @@ export class BaseMpl {
   static getCollectionAuthorityRecordAccount(collection: web3.PublicKey, authority: web3.PublicKey): web3.PublicKey {
     return web3.PublicKey.findProgramAddressSync(
       [
+        utf8.encode("metadata"),
         MPL_ID.toBuffer(),
         collection.toBuffer(),
+        utf8.encode("collection_authority"),
         authority.toBuffer()
       ],
       MPL_ID

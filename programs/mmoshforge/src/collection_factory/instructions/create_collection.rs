@@ -94,6 +94,7 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
         ],
@@ -106,8 +107,10 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -118,8 +121,10 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds = [
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             collection.key().as_ref(),
+            "collection_authority".as_bytes(),
             main_state.key().as_ref(),
         ],
         bump,
@@ -139,6 +144,7 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
         ],
@@ -151,8 +157,10 @@ pub struct ACreateCollection<'info> {
     #[account(
         mut,
         seeds=[
+            "metadata".as_bytes(),
             MPL_ID.as_ref(),
             parent_collection.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID
@@ -202,14 +210,7 @@ impl<'info> ACreateCollection<'info> {
                         // verified: true,
                         verified: false,
                         share: 100,
-                    },
-                    // Creator {
-                    //     address: main_state.key(),
-                    //     //TODO: may be require to invoke another instruction to flip the bool
-                    //     // verified: true,
-                    //     verified: false,
-                    //     share: 10,
-                    // },
+                    }
                 ]),
                 collection_details: Some(CollectionDetails::V1 { size: 0 }),
                 // collection_details: None,
@@ -236,13 +237,6 @@ impl<'info> ACreateCollection<'info> {
                         verified: false,
                         share: 100,
                     },
-                    // Creator {
-                    //     address: main_state.key(),
-                    //     //TODO: may be require to invoke another instruction to flip the bool
-                    //     // verified: true,
-                    //     verified: false,
-                    //     share: 10,
-                    // },
                 ]),
                 collection_details: Some(CollectionDetails::V1 { size: 0 }),
                 // collection_details: None,
@@ -260,7 +254,7 @@ impl<'info> ACreateCollection<'info> {
         .metadata(metadata.key())
         .sysvar_instructions(sysvar_instructions.key())
         .master_edition(Some(edition.key()))
-        .mint(mint.key(), true)
+        .mint(mint.key(), false)
         .authority(payer.key())
         .payer(payer.key())
         .update_authority(main_state.key(),true)
