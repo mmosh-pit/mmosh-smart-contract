@@ -32,8 +32,9 @@ pub struct SellWrappedSolV0<'info> {
   /// CHECK: Manually check signer here instead of using Signer so it can be used in internal CPI
   #[account(signer)]
   pub owner: AccountInfo<'info>,
+  /// CHECK: Checked by cpi to spl token
   #[account(mut)]
-  pub destination: SystemAccount<'info>,
+  pub destination: AccountInfo<'info>,
   pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
 }

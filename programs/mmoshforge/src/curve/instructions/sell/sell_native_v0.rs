@@ -12,8 +12,9 @@ use anchor_spl::token::Mint;
 pub struct SellNativeV0<'info> {
   pub common: SellCommonV0<'info>,
 
+  /// CHECK: Checked by cpi to spl token
   #[account(mut)]
-  pub destination: SystemAccount<'info>,
+  pub destination: AccountInfo<'info>,
 
   #[account(
     has_one = sol_storage,
@@ -94,7 +95,7 @@ pub fn handler(ctx: Context<SellNativeV0>, args: SellV0Args) -> Result<()> {
         sol_storage: ctx.accounts.sol_storage.clone(),
         source: base_storage_account.clone(),
         owner: token_bonding.to_account_info(),
-        destination: SystemAccount::try_from(&ctx.accounts.common.sell_base_royalties)?,
+        destination: ctx.accounts.common.sell_base_royalties.clone(),
         token_program: ctx.accounts.common.token_program.clone(),
         system_program: ctx.accounts.system_program.clone(),
       },

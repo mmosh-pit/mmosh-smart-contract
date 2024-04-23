@@ -52,7 +52,7 @@ pub fn handler(ctx: Context<TransferReservesNativeV0>, args: TransferReservesV0A
       sol_storage: ctx.accounts.sol_storage.clone(),
       source: ctx.accounts.common.base_storage.clone(),
       owner: token_bonding.to_account_info(),
-      destination: SystemAccount::try_from(&ctx.accounts.destination.to_account_info())?,
+      destination: ctx.accounts.destination.to_account_info(),
       token_program: ctx.accounts.common.token_program.clone(),
       system_program: ctx.accounts.system_program.clone(),
     },

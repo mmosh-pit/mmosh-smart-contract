@@ -1,5 +1,5 @@
 import { utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { web3 } from '@project-serum/anchor'
+import { web3 } from '@coral-xyz/anchor'
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token"
 
 export const web3Consts = {

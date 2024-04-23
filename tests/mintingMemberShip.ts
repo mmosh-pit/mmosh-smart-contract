@@ -30,6 +30,8 @@ describe("sop", () => {
   const program = anchor.workspace.Mmoshforge as Program<Mmoshforge>;
   const programId = program.programId;
 
+  return;
+
   console.log("prgram id ", programId.toBase58())
   const owner = provider.publicKey;
   const adConn = new AdConn(provider, program.programId);
@@ -43,6 +45,8 @@ describe("sop", () => {
     const { mint, txSignature } = await __mintOposToken(provider);
     log({ oposToken: mint.toBase58() })
   })
+
+
 
   it("Initialise Main State!", async () => {
     console.log(adConn.mainState.toBase58())

@@ -1,6 +1,6 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("FAtrNioZaqBBa9YAXK1Q2ijEGvh44Wpoqpx2gRXN1Q4b");
+declare_id!("GQJBSNqckwApKwrjHMgvhhFtwZFxb3YCoDFFcLmYCnEA");
 
 pub mod _main;
 pub mod activation_token;
@@ -92,6 +92,19 @@ pub mod mmoshforge {
       Ok(())
   }
 
+  pub fn pass_distribution(
+    ctx: Context<APassDistribution>
+  ) -> Result<()> {
+      profile::pass_distribution(ctx)?;
+      Ok(())
+  }
+
+  pub fn profile_distribution(
+    ctx: Context<AProfileDistribution>
+  ) -> Result<()> {
+      profile::profile_distribution(ctx)?;
+      Ok(())
+  }
 
     //User calls
     pub fn mint_profile_by_at(

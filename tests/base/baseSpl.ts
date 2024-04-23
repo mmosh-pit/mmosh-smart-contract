@@ -10,7 +10,7 @@ import {
   unpackAccount as unpackTokenAccount,
   createBurnInstruction,
 } from "@solana/spl-token";
-import { web3 } from "@project-serum/anchor";
+import { web3 } from "@coral-xyz/anchor";
 
 const log = console.log;
 

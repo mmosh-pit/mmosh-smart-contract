@@ -13,3 +13,9 @@ pub use mint_pass_by_at::*;
 
 pub mod project_distribution;
 pub use project_distribution::*;
+
+pub mod pass_distribution;
+pub use pass_distribution::*;
+
+pub mod profile_distribution;
+pub use profile_distribution::*;

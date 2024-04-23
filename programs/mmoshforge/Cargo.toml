@@ -24,7 +24,7 @@ winnow = "=0.4.1"
 toml_datetime="=0.6.1"
 blake3 = "=1.5.1"
 uint = "=0.9.1"
-spl-token = "3.2.0"
+spl-token = { version="3.2.0" , features = [ "no-entrypoint" ]}
 
 # blake3 = "=1.5.1"
 # anchor-lang = "0.27.0"

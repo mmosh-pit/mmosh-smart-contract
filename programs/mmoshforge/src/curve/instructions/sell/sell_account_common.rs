@@ -24,7 +24,7 @@ pub struct SellCommonV0<'info> {
   pub base_storage: Box<Account<'info, TokenAccount>>,
   #[account(mut)]
   /// CHECK: Token account could have been closed. Royalties are not sent if the account has been closed, but we also don't want to fail to parse here
-  pub sell_base_royalties: UncheckedAccount<'info>,
+  pub sell_base_royalties: AccountInfo<'info>,
   #[account(mut)]
   pub source: Box<Account<'info, TokenAccount>>,
   pub source_authority: Signer<'info>,
