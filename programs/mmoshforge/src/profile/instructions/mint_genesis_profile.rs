@@ -279,7 +279,7 @@ impl<'info> AMintProfileByAdmin<'info> {
         let ix = CreateBuilder::new()
         .metadata(metadata.key())
         .master_edition(Some(edition.key()))
-        .mint( mint.key(), true)
+        .mint( mint.key(), false)
         .authority(admin.key())
         .payer(admin.key())
         .update_authority(main_state.key(),true)

@@ -14,7 +14,7 @@ pub struct SignedPreciseNumber {
 
 #[inline]
 pub const fn p1() -> InnerUint {
-  U192([166666666666666019_u64, 0_u64, 0_u64]).low_u128()
+  U192([166666666666666019_u64, 0_u64, 0_u64])
 }
 pub const P1: SignedPreciseNumber = SignedPreciseNumber {
   value: PreciseNumber { value: p1() },
@@ -23,7 +23,7 @@ pub const P1: SignedPreciseNumber = SignedPreciseNumber {
 
 #[inline]
 pub const fn p2() -> InnerUint {
-  U192([2777777777701559_u64, 0_u64, 0_u64]).low_u128()
+  U192([2777777777701559_u64, 0_u64, 0_u64])
 }
 pub const P2: SignedPreciseNumber = SignedPreciseNumber {
   value: PreciseNumber { value: p2() },
@@ -32,7 +32,7 @@ pub const P2: SignedPreciseNumber = SignedPreciseNumber {
 
 #[inline]
 pub const fn p3() -> InnerUint {
-  U192([66137563214379_u64, 0_u64, 0_u64]).low_u128()
+  U192([66137563214379_u64, 0_u64, 0_u64])
 }
 pub const P3: SignedPreciseNumber = SignedPreciseNumber {
   value: PreciseNumber { value: p3() },
@@ -41,7 +41,7 @@ pub const P3: SignedPreciseNumber = SignedPreciseNumber {
 
 #[inline]
 pub const fn p4() -> InnerUint {
-  U192([1653390220546_u64, 0_u64, 0_u64]).low_u128()
+  U192([1653390220546_u64, 0_u64, 0_u64])
 }
 pub const P4: SignedPreciseNumber = SignedPreciseNumber {
   value: PreciseNumber { value: p4() },
@@ -50,7 +50,7 @@ pub const P4: SignedPreciseNumber = SignedPreciseNumber {
 
 #[inline]
 pub const fn p5() -> InnerUint {
-  U192([41381367970_u64, 0_u64, 0_u64]).low_u128()
+  U192([41381367970_u64, 0_u64, 0_u64])
 }
 pub const P5: SignedPreciseNumber = SignedPreciseNumber {
   value: PreciseNumber { value: p5() },
@@ -59,13 +59,13 @@ pub const P5: SignedPreciseNumber = SignedPreciseNumber {
 
 #[inline]
 pub const fn halfln2() -> InnerUint {
-  U192([346573590279972640_u64, 0_u64, 0_u64]).low_u128()
+  U192([346573590279972640_u64, 0_u64, 0_u64])
 }
 pub const HALFLN2: PreciseNumber = PreciseNumber { value: halfln2() };
 
 #[inline]
 pub const fn threehalfln2() -> InnerUint {
-  U192([1039720770839917900_u64, 0_u64, 0_u64]).low_u128()
+  U192([1039720770839917900_u64, 0_u64, 0_u64])
 }
 pub const THREEHALFLN2: PreciseNumber = PreciseNumber {
   value: threehalfln2(),
@@ -73,7 +73,7 @@ pub const THREEHALFLN2: PreciseNumber = PreciseNumber {
 
 #[inline]
 pub const fn invln2() -> InnerUint {
-  U192([1442695040888963387_u64, 0_u64, 0_u64]).low_u128()
+  U192([1442695040888963387_u64, 0_u64, 0_u64])
 }
 pub const INVLN2: PreciseNumber = PreciseNumber { value: invln2() };
 

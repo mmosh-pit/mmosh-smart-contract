@@ -65,17 +65,6 @@ pub mod mmoshforge {
         Ok(())
     }
 
-    pub fn update_collection<'info>(
-        ctx: Context<AUpdateCollection>,
-        name: String,
-        symbol: String,
-        uri: String,
-    ) -> Result<()> {
-
-        collection_factory::update_collection(ctx, name, symbol, uri )?;
-        Ok(())
-    }
-
 
     pub fn mint_genesis_profile(
         ctx: Context<AMintProfileByAdmin>,
@@ -84,27 +73,6 @@ pub mod mmoshforge {
         profile::mint_genesis_profile(ctx, input)?;
         Ok(())
     }
-
-    pub fn project_distribution(
-      ctx: Context<AProjectDistribution>
-  ) -> Result<()> {
-      profile::project_distribution(ctx)?;
-      Ok(())
-  }
-
-  pub fn pass_distribution(
-    ctx: Context<APassDistribution>
-  ) -> Result<()> {
-      profile::pass_distribution(ctx)?;
-      Ok(())
-  }
-
-  pub fn profile_distribution(
-    ctx: Context<AProfileDistribution>
-  ) -> Result<()> {
-      profile::profile_distribution(ctx)?;
-      Ok(())
-  }
 
     //User calls
     pub fn mint_profile_by_at(

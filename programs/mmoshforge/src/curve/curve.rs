@@ -132,7 +132,7 @@ fn price_exp(
 
 fn to_prec(i: u128) -> PreciseNumber {
   PreciseNumber {
-    value: InnerUint::from(i) * 1_000_000_u128, // Add 6 precision
+    value: InnerUint::from(i) * 1_000_000_u64, // Add 6 precision
   }
 }
 
@@ -147,10 +147,10 @@ fn time_decay_k(
   let k1_prec = to_prec(k1);
   let d_prec = to_prec(d);
   let interval_prec = PreciseNumber {
-    value: InnerUint::from(interval) * 1_000_000_u128, // Add 6 precision
+    value: InnerUint::from(interval) * 1_000_000_u64, // Add 6 precision
   };
   let time_offset_prec = PreciseNumber {
-    value: InnerUint::from(time_offset as u128) * 1_000_000_u128, // Add 6 precision
+    value: InnerUint::from(time_offset) * 1_000_000_u64, // Add 6 precision
   };
 
   let time_multiplier = if time_offset_prec.less_than(&interval_prec) {

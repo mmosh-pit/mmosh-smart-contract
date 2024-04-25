@@ -130,6 +130,7 @@ pub struct AInitActivationToken<'info> {
             "metadata".as_bytes(),
             MPL_ID.as_ref(),
             profile.key().as_ref(),
+            "edition".as_bytes(),
         ],
         bump,
         seeds::program = MPL_ID

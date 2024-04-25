@@ -9,7 +9,7 @@ use crate::curve::signed_precise_number::SignedPreciseNumber;
 use crate::curve::curveuint::U192;
 
 // Allows for easy swapping between different internal representations
-pub type InnerUint = u128;
+pub type InnerUint = U192; 
 
 pub static ONE_PREC: PreciseNumber = PreciseNumber { value: one() };
 pub static ZERO_PREC: PreciseNumber = PreciseNumber { value: zero() };
@@ -29,27 +29,27 @@ pub struct PreciseNumber {
 #[inline]
 pub const fn one() -> InnerUint {
   // InnerUint::from(1_000_000_000_000_000_000_000_000_u128)
-  U192([1000000000000000000_u64, 0_u64, 0_u64]).low_u128()
+  U192([1000000000000000000_u64, 0_u64, 0_u64])
   // InnerUint::from(ONE)
 }
 
 #[inline]
 pub const fn two() -> InnerUint {
   // InnerUint::from(1_000_000_000_000_000_000_000_000_u128)
-  U192([2000000000000000000_u64, 0_u64, 0_u64]).low_u128()
+  U192([2000000000000000000_u64, 0_u64, 0_u64])
   // InnerUint::from(ONE)
 }
 
 // 0.693147180369123816490000
 #[inline]
 pub const fn ln2hi() -> InnerUint {
-  U192([13974485815783726801_u64, 3_u64, 0_u64]).low_u128()
+  U192([13974485815783726801_u64, 3_u64, 0_u64])
 }
 pub const LN2HI: PreciseNumber = PreciseNumber { value: ln2hi() };
 #[inline]
 
 pub const fn ln2hi_scale() -> InnerUint {
-  U192([7766279631452241920_u64, 5_u64, 0_u64]).low_u128()
+  U192([7766279631452241920_u64, 5_u64, 0_u64])
 }
 
 pub const LN2HI_SCALE: PreciseNumber = PreciseNumber {
@@ -60,13 +60,13 @@ pub const LN2HI_SCALE: PreciseNumber = PreciseNumber {
 // Note that ln2lo is lower than our max precision, so we store both it and the thirty zeroes to scale by
 #[inline]
 pub const fn ln2lo() -> InnerUint {
-  U192([3405790746697269248_u64, 1034445385942222_u64, 0_u64]).low_u128()
+  U192([3405790746697269248_u64, 1034445385942222_u64, 0_u64])
 }
 pub const LN2LO: PreciseNumber = PreciseNumber { value: ln2lo() };
 
 #[inline]
 pub const fn ln2lo_scale() -> InnerUint {
-  U192([80237960548581376_u64, 10841254275107988496_u64, 293873_u64]).low_u128()
+  U192([80237960548581376_u64, 10841254275107988496_u64, 293873_u64])
 }
 
 pub const LN2LO_SCALE: PreciseNumber = PreciseNumber {
@@ -76,48 +76,48 @@ pub const LN2LO_SCALE: PreciseNumber = PreciseNumber {
 // 6.666666666666735130e-01
 #[inline]
 pub const fn l1() -> InnerUint {
-  U192([666666666666673513_u64, 0_u64, 0_u64]).low_u128()
+  U192([666666666666673513_u64, 0_u64, 0_u64])
 }
 pub const L1: PreciseNumber = PreciseNumber { value: l1() };
 
 #[inline]
 pub const fn l2() -> InnerUint {
-  U192([399999999994094190_u64, 0_u64, 0_u64]).low_u128()
+  U192([399999999994094190_u64, 0_u64, 0_u64])
 }
 pub const L2: PreciseNumber = PreciseNumber { value: l2() };
 
 #[inline]
 pub const fn l3() -> InnerUint {
-  U192([285714287436623914_u64, 0_u64, 0_u64]).low_u128()
+  U192([285714287436623914_u64, 0_u64, 0_u64])
 }
 pub const L3: PreciseNumber = PreciseNumber { value: l3() };
 
 #[inline]
 pub const fn l4() -> InnerUint {
-  U192([222221984321497839_u64, 0_u64, 0_u64]).low_u128()
+  U192([222221984321497839_u64, 0_u64, 0_u64])
 }
 pub const L4: PreciseNumber = PreciseNumber { value: l4() };
 
 #[inline]
 pub const fn l5() -> InnerUint {
-  U192([181835721616180501_u64, 0_u64, 0_u64]).low_u128()
+  U192([181835721616180501_u64, 0_u64, 0_u64])
 }
 pub const L5: PreciseNumber = PreciseNumber { value: l5() };
 
 pub const fn l6() -> InnerUint {
-  U192([153138376992093733_u64, 0_u64, 0_u64]).low_u128()
+  U192([153138376992093733_u64, 0_u64, 0_u64])
 }
 pub const L6: PreciseNumber = PreciseNumber { value: l6() };
 
 #[inline]
 pub const fn l7() -> InnerUint {
-  U192([147981986051165859_u64, 0_u64, 0_u64]).low_u128()
+  U192([147981986051165859_u64, 0_u64, 0_u64])
 }
 pub const L7: PreciseNumber = PreciseNumber { value: l7() };
 
 #[inline]
 pub const fn sqrt2overtwo() -> InnerUint {
-  U192([707106781186547600_u64, 0_u64, 0_u64]).low_u128()
+  U192([707106781186547600_u64, 0_u64, 0_u64])
 }
 pub const SQRT2OVERTWO: PreciseNumber = PreciseNumber {
   value: sqrt2overtwo(),
@@ -125,14 +125,14 @@ pub const SQRT2OVERTWO: PreciseNumber = PreciseNumber {
 
 #[inline]
 pub const fn half() -> InnerUint {
-  U192([500000000000000000_u64, 0_u64, 0_u64]).low_u128()
+  U192([500000000000000000_u64, 0_u64, 0_u64])
 }
 pub const HALF: PreciseNumber = PreciseNumber { value: half() };
 
 /// The number 0 as a PreciseNumber, used for easier calculations.
 #[inline]
 pub const fn zero() -> InnerUint {
-  U192([0_u64, 0_u64, 0_u64]).low_u128()
+  U192([0_u64, 0_u64, 0_u64])
 }
 
 impl PreciseNumber {
@@ -170,7 +170,7 @@ impl PreciseNumber {
       .value
       .checked_add(Self::rounding_correction())?
       .checked_div(one())
-      .map(|v| v)
+      .map(|v| v.as_u128())
   }
 
   /// Checks that two PreciseNumbers are equal within some tolerance
@@ -209,7 +209,7 @@ impl PreciseNumber {
   pub fn ceiling(&self) -> Option<Self> {
     let value = self
       .value
-      .checked_add(one().checked_sub(InnerUint::from(1 as u128))?)?
+      .checked_add(one().checked_sub(InnerUint::from(1))?)?
       .checked_div(one())?
       .checked_mul(one())?;
     Some(Self { value })
@@ -293,9 +293,9 @@ impl PreciseNumber {
     if self.eq(&ZERO_PREC) {
       Some((ZERO_PREC.clone(), 0))
     } else if self.less_than(&ONE_PREC) {
-      let first_leading = self.value;
-      let one_leading = ONE_PREC.value;
-      let bits = i64::from(first_leading.checked_sub(one_leading).unwrap() as i64);
+      let first_leading = self.value.0[0].leading_zeros();
+      let one_leading = ONE_PREC.value.0[0].leading_zeros();
+      let bits = i64::from(first_leading.checked_sub(one_leading).unwrap());
       let frac = PreciseNumber {
         value: self.value << bits,
       };
@@ -574,7 +574,7 @@ mod tests {
   fn test_floor() {
     let whole_number = PreciseNumber::new(2).unwrap();
     let mut decimal_number = PreciseNumber::new(2).unwrap();
-    decimal_number.value += InnerUint::from(1 as u128);
+    decimal_number.value += InnerUint::from(1);
     let floor = decimal_number.floor().unwrap();
     let floor_again = floor.floor().unwrap();
     assert_eq!(whole_number.value, floor.value);
@@ -585,7 +585,7 @@ mod tests {
   fn test_ceiling() {
     let whole_number = PreciseNumber::new(2).unwrap();
     let mut decimal_number = PreciseNumber::new(2).unwrap();
-    decimal_number.value -= InnerUint::from(1 as u128);
+    decimal_number.value -= InnerUint::from(1);
     let ceiling = decimal_number.ceiling().unwrap();
     let ceiling_again = ceiling.ceiling().unwrap();
     assert_eq!(whole_number.value, ceiling.value);

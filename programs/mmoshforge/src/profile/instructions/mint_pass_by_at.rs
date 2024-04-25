@@ -454,7 +454,7 @@ impl<'info> AMintPassByAt<'info> {
         let ix = CreateBuilder::new()
         .metadata(metadata.key())
         .master_edition(Some(edition.key()))
-        .mint( mint.key(), true)
+        .mint( mint.key(), false)
         .authority(user.key())
         .payer(user.key())
         .update_authority(main_state.key(),true)
