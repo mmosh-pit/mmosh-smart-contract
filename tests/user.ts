@@ -1,9 +1,9 @@
 import * as anchor from "@coral-xyz/anchor";
-import { AnchorProvider, Program, web3, BN } from "@project-serum/anchor";
-import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
+import { AnchorProvider, Program, web3, BN } from "@coral-xyz/anchor";
+import { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import { IDL, Sop } from "../target/types/sop";
+import { IDL, Mmoshforge } from "../target/types/mmoshforge";
 import {
   LineageInfo,
   MainState,
@@ -44,7 +44,7 @@ export class Connectivity {
   txis: web3.TransactionInstruction[] = [];
   extraSigns: web3.Keypair[] = [];
   multiSignInfo: any[] = [];
-  program: Program<Sop>;
+  program: Program<Mmoshforge>;
   mainState: web3.PublicKey;
   connection: web3.Connection;
   metaplex: Metaplex
@@ -247,7 +247,6 @@ export class Connectivity {
         profile, 
         user,
         oposToken, // 1
-        userOposAta,
         userProfileAta,
         mainState: this.mainState, // 2
         collection, // 4
@@ -265,19 +264,31 @@ export class Connectivity {
         userActivationTokenAta,
         associatedTokenProgram, // 10
         parentProfile,
-        currentParentProfileHolder,
-        currentGrandParentProfileHolder,
-        currentGreatGrandParentProfileHolder,
-        currentGgreatGrandParentProfileHolder,
-        currentGenesisProfileHolder,
-        parentProfileHolderOposAta,
-        grandParentProfileHolderOposAta,
-        greatGrandParentProfileHolderOposAta,
-        ggreatGrandParentProfileHolderOposAta,
-        genesisProfileHolderOposAta,
       }).instruction()
       this.txis.push(ix)
 
+
+      const ix1 = await this.program.methods.profileDistribution(
+        ).accounts({
+          user,
+          oposToken, // 1
+          userOposAta,
+          mainState: this.mainState, // 2
+          tokenProgram, // 5
+          systemProgram, // 6
+          associatedTokenProgram, // 10
+          currentParentProfileHolder,
+          currentGrandParentProfileHolder,
+          currentGreatGrandParentProfileHolder,
+          currentGgreatGrandParentProfileHolder,
+          currentGenesisProfileHolder,
+          parentProfileHolderOposAta,
+          grandParentProfileHolderOposAta,
+          greatGrandParentProfileHolderOposAta,
+          ggreatGrandParentProfileHolderOposAta,
+          genesisProfileHolderOposAta,
+      }).instruction()
+      this.txis.push(ix)
 
       const commonLutInfo = await (await (this.connection.getAddressLookupTable(commonLut))).value
 

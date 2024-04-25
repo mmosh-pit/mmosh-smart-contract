@@ -1,19 +1,19 @@
 import { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
-import { web3 } from '@project-serum/anchor';
-import { Sop } from "../target/types/sop";
+import { web3 } from '@coral-xyz/anchor';
+import { Mmoshforge } from "../target/types/mmoshforge";
 
 const mainStateTypeName = "mainState";
 const profileStateTypeName = "profileState";
 const lineageTypeName = "LineageInfo";
 
-export type MainState = IdlAccounts<Sop>[typeof mainStateTypeName];
-export type ProfileState = IdlAccounts<Sop>[typeof profileStateTypeName];
-export type LineageInfo = IdlTypes<Sop>[typeof lineageTypeName];
+export type MainState = IdlAccounts<Mmoshforge>[typeof mainStateTypeName];
+export type ProfileState = IdlAccounts<Mmoshforge>[typeof profileStateTypeName];
+export type LineageInfo = IdlTypes<Mmoshforge>[typeof lineageTypeName];
 
 const mainStateInputTypeName = "MainStateInput";
 const mintProfileByAdminInput = "MintProfileByAdminInput"
-export type MainStateInput = IdlTypes<Sop>[typeof mainStateInputTypeName];
-export type MintProfileByAdminInput = IdlTypes<Sop>[typeof mintProfileByAdminInput];
+export type MainStateInput = IdlTypes<Mmoshforge>[typeof mainStateInputTypeName];
+export type MintProfileByAdminInput = IdlTypes<Mmoshforge>[typeof mintProfileByAdminInput];
 
 
 //EXTRA (Out of IDL)

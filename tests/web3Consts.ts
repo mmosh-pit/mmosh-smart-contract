@@ -1,5 +1,5 @@
 import { utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { web3 } from '@project-serum/anchor'
+import { web3 } from '@coral-xyz/anchor'
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token"
 
 export const web3Consts = {
@@ -9,9 +9,11 @@ export const web3Consts = {
   mplProgram: new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
   associatedTokenProgram: new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
   addressLookupTableProgram: web3.AddressLookupTableProgram.programId,
-  oposToken: new web3.PublicKey("EG5RfcstzcpmbbajLZovwYeSDdZAkCsUmgc57aw4omGz"),
-  badgeCollection: new web3.PublicKey("DX9up2AMhjiM8SUVkFfj1afdFhhHK2uutebs4Hd2XxNk"),
-  rootCollection: new web3.PublicKey("7nD1XkTZVf7BgcAbTQhM8Lux1wSQDaMydmXfcPMpLjyJ"),
+  oposToken: new web3.PublicKey("6vgT7gxtF8Jdu7foPDZzdHxkwYFX9Y1jvgpxP8vH2Apw"),
+  rootCollection: new web3.PublicKey("F3kdMzMSfgKoSJgtCqJrFQNhmtSQtPBJ8t3uxWKxmayi"),
+  badgeCollection: new web3.PublicKey("75WUuYaA9rwpkmGfsC4c26E4CqvDu1DiLcG7NTZyHLpm"),
+  passCollection: new web3.PublicKey("5qLuvrfiJoDAR4DnJV62HPvPpMjZxwuBU4BZLvUrfTUh"),
+  profileCollection: new web3.PublicKey("DwzoFFz2PVuJ3NtsCWYn1Kwwbxf5VfbTtxZfTMt2cDLx"),
   LAMPORTS_PER_OPOS: 1000_000_000,
   Seeds: {
     mainState: utf8.encode("main_state4"),

@@ -1,4 +1,4 @@
-import { web3, AnchorProvider } from '@project-serum/anchor'
+import { web3, AnchorProvider } from '@coral-xyz/anchor'
 import { BaseSpl } from './base/baseSpl'
 import { web3Consts } from './web3Consts'
 import { ProfileState } from './web3Types'

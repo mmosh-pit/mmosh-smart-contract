@@ -1,0 +1,39 @@
+[package]
+name = "mmoshforge"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "mmoshforge"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.29.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.29.0" }
+solana-program = "=1.17.31"
+solana-address-lookup-table-program = "=1.17.31"
+winnow = "=0.4.1"
+toml_datetime="=0.6.1"
+blake3 = "=1.5.1"
+uint = "=0.9.1"
+spl-token = { version="3.2.0" , features = [ "no-entrypoint" ]}
+
+# blake3 = "=1.5.1"
+# anchor-lang = "0.27.0"
+# anchor-spl = "0.27.0"
+# getrandom = { version = "0.2.9", features = ["custom"] }
+# solana-program = "=1.14.17"
+# winnow = "=0.4.1"
+# toml_datetime = "=0.6.1"
+serde = { version = "1.0.198" , features=["serde_derive"] }
+serde_derive = "1.0.198"
+mpl-token-metadata = { version = "4.1.2", features=["serde"] }
+
