@@ -1,6 +1,6 @@
 #![allow(unused)]
 use anchor_lang::prelude::*;
-declare_id!("5NaZ252KCHxoVEpGXQE2z5StBQoDoqoTpB2VruauSnGG");
+declare_id!("GQJBSNqckwApKwrjHMgvhhFtwZFxb3YCoDFFcLmYCnEA");
 
 pub mod _main;
 pub mod activation_token;
@@ -65,16 +65,6 @@ pub mod mmoshforge {
         Ok(())
     }
 
-    pub fn update_collection<'info>(
-        ctx: Context<AUpdateCollection>,
-        name: String,
-        symbol: String,
-        uri: String,
-    ) -> Result<()> {
-
-        collection_factory::update_collection(ctx, name, symbol, uri )?;
-        Ok(())
-    }
 
 
     pub fn mint_genesis_profile(
@@ -85,12 +75,6 @@ pub mod mmoshforge {
         Ok(())
     }
 
-    pub fn project_distribution(
-      ctx: Context<AProjectDistribution>
-  ) -> Result<()> {
-      profile::project_distribution(ctx)?;
-      Ok(())
-  }
 
 
     //User calls

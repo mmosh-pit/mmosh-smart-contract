@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.mainnet]
-mmoshforge = "5NaZ252KCHxoVEpGXQE2z5StBQoDoqoTpB2VruauSnGG"
+mmoshforge = "GQJBSNqckwApKwrjHMgvhhFtwZFxb3YCoDFFcLmYCnEA"
 
 [registry]
 url = "https://api.apr.dev"

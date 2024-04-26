@@ -18,8 +18,8 @@ default = []
 [dependencies]
 anchor-lang = { git = "https://github.com/coral-xyz/anchor", features = ["init-if-needed"] }
 anchor-spl = { git = "https://github.com/coral-xyz/anchor" }
-solana-program = "=1.14.17"
-solana-address-lookup-table-program = "=1.14.17"
+solana-program = "=1.14.29"
+solana-address-lookup-table-program = "=1.14.29"
 winnow = "=0.4.1"
 toml_datetime="=0.6.1"
 blake3 = "=1.3.1"
