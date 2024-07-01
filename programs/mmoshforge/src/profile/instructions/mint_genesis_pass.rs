@@ -358,21 +358,3 @@ impl<'info> AMintPassByAdmin<'info> {
 }
 
 
-
-#[derive(Clone)]
-pub struct TransferModel<'info> {
-    pub account_opos_ata: AccountInfo<'info>,
-    pub key: String,
-    pub value: u64
-}
-
-pub fn get_transfer_index(datas: Vec<TransferModel>, key: String) -> i32 {
-    let mut indexer = -1;
-    for data in datas.into_iter().enumerate() {
-       if data.1.key == key {
-          indexer = data.0 as i32;
-          break
-       }
-    }
-    indexer
-}

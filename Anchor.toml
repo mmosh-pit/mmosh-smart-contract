@@ -1,8 +1,11 @@
+[toolchain]
+
 [features]
+resolution = false
 seeds = false
 skip-lint = false
 
-[programs.devnet]
+[programs.mainnet]
 mmoshforge = "GQJBSNqckwApKwrjHMgvhhFtwZFxb3YCoDFFcLmYCnEA"
 
 [registry]
@@ -10,7 +13,7 @@ url = "https://api.apr.dev"
 
 
 [provider]
-cluster = "devnet"
+cluster = "mainnet"
 wallet = "/Users/jeyakumar/JEYAKUMAR/ssh/hellbender/id.json"
 
 [scripts]

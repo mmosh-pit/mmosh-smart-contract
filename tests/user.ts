@@ -3,7 +3,8 @@ import { AnchorProvider, Program, web3, BN } from "@coral-xyz/anchor";
 import { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import { IDL, Mmoshforge } from "../target/types/mmoshforge";
+import { Mmoshforge } from "../target/types/mmoshforge";
+import IDL from "./../target/idl/mmoshforge.json"
 import {
   LineageInfo,
   MainState,
@@ -59,7 +60,7 @@ export class Connectivity {
     this.provider = provider;
     this.connection = provider.connection
     this.programId = programId
-    this.program = new Program(IDL, programId, this.provider);
+    this.program = new Program(IDL as Mmoshforge, this.provider);
     this.mainState = web3.PublicKey.findProgramAddressSync(
       [Seeds.mainState],
       this.programId
@@ -267,28 +268,6 @@ export class Connectivity {
       }).instruction()
       this.txis.push(ix)
 
-
-      const ix1 = await this.program.methods.profileDistribution(
-        ).accounts({
-          user,
-          oposToken, // 1
-          userOposAta,
-          mainState: this.mainState, // 2
-          tokenProgram, // 5
-          systemProgram, // 6
-          associatedTokenProgram, // 10
-          currentParentProfileHolder,
-          currentGrandParentProfileHolder,
-          currentGreatGrandParentProfileHolder,
-          currentGgreatGrandParentProfileHolder,
-          currentGenesisProfileHolder,
-          parentProfileHolderOposAta,
-          grandParentProfileHolderOposAta,
-          greatGrandParentProfileHolderOposAta,
-          ggreatGrandParentProfileHolderOposAta,
-          genesisProfileHolderOposAta,
-      }).instruction()
-      this.txis.push(ix)
 
       const commonLutInfo = await (await (this.connection.getAddressLookupTable(commonLut))).value
 

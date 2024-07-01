@@ -1,9 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
 import { AnchorProvider, Program, web3, BN } from "@coral-xyz/anchor";
 import { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
-import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { bs58, utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import { IDL, Mmoshforge } from "../target/types/mmoshforge";
+import { Mmoshforge } from "../target/types/mmoshforge";
+import IDL from "./../target/idl/mmoshforge.json"
 import {
   LineageInfo,
   MainState,
@@ -17,6 +18,7 @@ import { getAssociatedTokenAddressSync, getNonTransferable, unpackAccount } from
 import { BaseMpl } from "./base/baseMpl";
 import { web3Consts } from './web3Consts'
 import { BaseSpl } from "./base/baseSpl";
+import axios from "axios";
 
 const {
   systemProgram,
@@ -56,7 +58,7 @@ export class Connectivity {
     this.connection = provider.connection
 
     this.programId = programId
-    this.program = new Program(IDL, programId, this.provider);
+    this.program = new Program(IDL as Mmoshforge, this.provider);
     this.owner = this.provider.publicKey;
     this.mainState = web3.PublicKey.findProgramAddressSync(
       [Seeds.mainState],
@@ -203,6 +205,25 @@ export class Connectivity {
         }
       })
       const mintTx = new web3.Transaction().add(...mintIxs)
+      mintTx.recentBlockhash = (
+        await this.connection.getLatestBlockhash()
+      ).blockhash;
+      mintTx.feePayer = this.provider.publicKey;
+
+      const feeEstimate = await this.getPriorityFeeEstimate(mintTx);
+      let feeIns;
+      if (feeEstimate > 0) {
+        feeIns = web3.ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: feeEstimate,
+        });
+      } else {
+        feeIns = web3.ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_400_000,
+        });
+      }
+      mintTx.add(feeIns);
+
+
       const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
 
       const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
@@ -229,8 +250,26 @@ export class Connectivity {
       this.txis.push(ix)
 
       const tx = new web3.Transaction().add(...this.txis)
+      tx.recentBlockhash = (
+        await this.connection.getLatestBlockhash()
+      ).blockhash;
+      tx.feePayer = this.provider.publicKey;
+
+      const feeEstimate1 = await this.getPriorityFeeEstimate(tx);
+      let feeIns1;
+      if (feeEstimate1 > 0) {
+        feeIns1 = web3.ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: feeEstimate1,
+        });
+      } else {
+        feeIns1 = web3.ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_400_000,
+        });
+      }
+      tx.add(feeIns1);
+      
       this.txis = []
-      const signature = await this.provider.sendAndConfirm(tx)
+       const signature = await this.provider.sendAndConfirm(tx)
 
       return {
         Ok: { signature, info: { collection: mint.toBase58() } }
@@ -240,66 +279,6 @@ export class Connectivity {
       return { Err: e };
     }
   }
-
-  async updateCollection(input: { name?: string, symbol?: string, uri?: string, mint?: web3.PublicKey, parrentCollection?: web3.PublicKey}): Promise<Result<TxPassType<{ collection: string }>, any>> {
-    try {
-      this.reinit();
-      let {
-        name,
-        symbol,
-        uri,
-        mint,
-        parrentCollection,
-      } = input;
-      name = name ?? ""
-      symbol = symbol ?? ""
-      uri = uri ?? ""
-      const admin = this.provider.publicKey;
-      if (!admin) throw "Wallet not found"
-
-      const adminAta = getAssociatedTokenAddressSync(mint, admin);
-      const metadata = BaseMpl.getMetadataAccount(mint)
-      const edition = BaseMpl.getEditionAccount(mint)
-      const collectionAuthorityRecord = BaseMpl.getCollectionAuthorityRecordAccount(mint, this.mainState)
-      const collectionState = this.__getCollectionStateAccount(mint)
-
-      const rootCollection = parrentCollection ? parrentCollection : mint
-      const parentCollectionMetadata = BaseMpl.getMetadataAccount(rootCollection)
-      const parentCollectionEdition = BaseMpl.getEditionAccount(rootCollection)
-
-      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
-      this.txis.push(cuBudgetIncIx)
-
-      const ix = await this.program.methods.updateCollection(name, symbol, uri).accounts({
-        admin,
-        mainState: this.mainState,
-        associatedTokenProgram,
-        collection: mint,
-        collectionEdition: edition,
-        collectionMetadata: metadata,
-        parentCollection: rootCollection,
-        parentCollectionEdition,
-        parentCollectionMetadata,
-        mplProgram,
-        tokenProgram,
-        systemProgram,
-        sysvarInstructions,
-      }).instruction()
-      this.txis.push(ix)
-
-      const tx = new web3.Transaction().add(...this.txis)
-      this.txis = []
-      const signature = await this.provider.sendAndConfirm(tx)
-
-      return {
-        Ok: { signature, info: { collection: mint.toBase58() } }
-      }
-    } catch (e) {
-      log({ error: e })
-      return { Err: e };
-    }
-  }
-
 
   // async mintGenesisProfile(input: { name: string, symbol: string, uri: string }): Promise<Result<TxPassType<{ profile: string }>, any>> {
   async mintGenesisProfile(input: MintProfileByAdminInput): Promise<Result<TxPassType<{ profile: string }>, any>> {
@@ -338,25 +317,24 @@ export class Connectivity {
         }
       })
       const mintTx = new web3.Transaction().add(...mintIxs)
-      const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
-      const cuBudgetIncIx = web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 3000_00 })
-      this.txis.push(cuBudgetIncIx)
+      mintTx.recentBlockhash = (
+        await this.connection.getLatestBlockhash()
+      ).blockhash;
+      mintTx.feePayer = this.provider.publicKey;
 
-      // const args: MintProfileByAdminInput = {
-      //   name: input.name,
-      //   symbol: input.symbol,
-      //   uri: input.uri,
-      //   lineage: {
-      //     parent: profile,
-      //     creator: admin,
-      //     generation: new anchor.BN(1),
-      //     totalChild: new BN(0),//not require
-      //     grandParent: profile,
-      //     greatGrandParent: profile,
-      //     ggreateGrandParent: profile,
-      //   },
-      //   parentMint: profile,
-      // }
+      const feeEstimate = await this.getPriorityFeeEstimate(mintTx);
+      let feeIns;
+      if (feeEstimate > 0) {
+        feeIns = web3.ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: feeEstimate,
+        });
+      } else {
+        feeIns = web3.ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_400_000,
+        });
+      }
+      mintTx.add(feeIns);
+      const mintTxSignature = await this.provider.sendAndConfirm(mintTx, [mintKp])
 
       const ix = await this.program.methods.mintGenesisProfile(input).accounts({
         admin,
@@ -381,6 +359,25 @@ export class Connectivity {
       this.txis.push(ix)
 
       const tx = new web3.Transaction().add(...this.txis)
+
+      tx.recentBlockhash = (
+        await this.connection.getLatestBlockhash()
+      ).blockhash;
+      tx.feePayer = this.provider.publicKey;
+
+      const feeEstimate1 = await this.getPriorityFeeEstimate(tx);
+      let feeIns1;
+      if (feeEstimate1 > 0) {
+        feeIns1 = web3.ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: feeEstimate1,
+        });
+      } else {
+        feeIns1 = web3.ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_400_000,
+        });
+      }
+      tx.add(feeIns1);
+      
       this.txis = []
       const signature = await this.provider.sendAndConfirm(tx)
       return {
@@ -708,6 +705,43 @@ export class Connectivity {
       genesisProfileHolderOposAta: getAssociatedTokenAddressSync(oposToken, currentGenesisProfileHolder),
     }
   }
+
+  async getPriorityFeeEstimate(transaction: any) {
+    try {
+      const response = await axios(Config.rpcURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        data: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "1",
+          method: "getPriorityFeeEstimate",
+          params: [
+            {
+              transaction: bs58.encode(
+                transaction.serialize({
+                  requireAllSignatures: false,
+                  verifySignatures: false,
+                }),
+              ),
+              options: { priorityLevel: "High" },
+            },
+          ],
+        }),
+      });
+      const data = await response.data;
+      console.log(
+        "Fee in function for",
+        "HIGH",
+        " :",
+        data.result.priorityFeeEstimate,
+      );
+      return Math.floor(data.result.priorityFeeEstimate);
+    } catch (error) {
+      console.log("getPriorityFeeEstimate ", error);
+      return 0;
+    }
+  }
+  
 }
 
 

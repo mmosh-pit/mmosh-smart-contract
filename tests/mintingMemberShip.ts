@@ -49,7 +49,6 @@ describe("sop", () => {
 
 
 
-
   it("Initialise Main State!", async () => {
     console.log(adConn.mainState.toBase58())
     const accountInfo = await connection.getAccountInfo(adConn.mainState)
@@ -81,8 +80,6 @@ describe("sop", () => {
   });
 
 
-
-
   // let rootCollection: web3.PublicKey = null
   // it("creating root Collections", async () => {
 
@@ -102,11 +99,6 @@ describe("sop", () => {
 
   //   console.log("new root collection ",rootCollection.toBase58());
   // })
-
-
-
-
-
 
 
   // let badgeCollection: web3.PublicKey = null
@@ -151,32 +143,32 @@ describe("sop", () => {
   // })
 
 
-  let profileCollection: web3.PublicKey = null
-  it("creating profile Collections", async () => {
-    console.log("main state ",adConn.mainState.toBase58());
-    const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
-    //skipping membershipPassCollection mintign if it already minted
-    if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
-      profileCollection = mainStateInfo.profileCollection;
-      console.log("existing profile collection ",profileCollection.toBase58());
-      return;
-    }
+  // let profileCollection: web3.PublicKey = null
+  // it("creating profile Collections", async () => {
+  //   console.log("main state ",adConn.mainState.toBase58());
+  //   const mainStateInfo = await adConn.program.account.mainState.fetch(adConn.mainState)
+  //   //skipping membershipPassCollection mintign if it already minted
+  //   if (mainStateInfo.profileCollection.toBase58() != web3.SystemProgram.programId.toBase58()) {
+  //     profileCollection = mainStateInfo.profileCollection;
+  //     console.log("existing profile collection ",profileCollection.toBase58());
+  //     return;
+  //   }
 
-    // const name = "MMOSH Profile Collection"
-    // const symbol = "PROFILES"
-    // const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection_new.json"
-    // const res = await adConn.createCollection({
-    //   name,
-    //   symbol,
-    //   uri,
-    //   parrentCollection: web3Consts.rootCollection,
-    //   collectionType: "profile"
-    // })
-    // assert(res?.Ok, "Unable to create collection")
-    // log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
-    // profileCollection = new web3.PublicKey(res.Ok.info.collection)
-    // console.log("new profile collection ",profileCollection.toBase58());
-  })
+  //   const name = "MMOSH Profile Collection"
+  //   const symbol = "PROFILES"
+  //   const uri = "https://shdw-drive.genesysgo.net/FuBjTTmQuqM7pGR2gFsaiBxDmdj8ExP5fzNwnZyE2PgC/profile_collection_new.json"
+  //   const res = await adConn.createCollection({
+  //     name,
+  //     symbol,
+  //     uri,
+  //     parrentCollection: web3Consts.rootCollection,
+  //     collectionType: "profile"
+  //   })
+  //   assert(res?.Ok, "Unable to create collection")
+  //   log({ sign: res.Ok.signature, collection: res.Ok.info.collection })
+  //   profileCollection = new web3.PublicKey(res.Ok.info.collection)
+  //   console.log("new profile collection ",profileCollection.toBase58());
+  // })
 
 
 
